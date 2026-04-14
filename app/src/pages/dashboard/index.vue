@@ -2,8 +2,11 @@
   <view class="dashboard-container">
     <view class="header">
       <text class="header-title">首页</text>
+      <button class="refresh-btn" @click="fetchDashboardData" :disabled="loading">
+        <text class="refresh-icon">🔄</text>
+      </button>
     </view>
-    <view class="stats-container">
+    <view class="stats-container" v-if="!loading">
       <view class="stat-item">
         <text class="stat-value">{{ stats.sales }}</text>
         <text class="stat-label">今日销售</text>
@@ -20,6 +23,9 @@
         <text class="stat-value">{{ stats.shops }}</text>
         <text class="stat-label">店铺数量</text>
       </view>
+    </view>
+    <view class="loading-container" v-else>
+      <text class="loading-text">加载中...</text>
     </view>
     <view class="menu-container">
       <view class="menu-item" @click="navigateTo('/pages/shop-management/index')">
@@ -59,18 +65,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const stats = ref({
-  sales: '¥12,345',
-  inventory: '1,234',
-  orders: '56',
-  shops: '3'
+  sales: '¥0',
+  inventory: '0',
+  orders: '0',
+  shops: '0'
 })
+
+const loading = ref(false)
 
 const navigateTo = (url: string) => {
   uni.navigateTo({ url })
 }
+
+const fetchDashboardData = async () => {
+  loading.value = true
+  
+  try {
+    // 模拟API调用获取仪表盘数据
+    // 实际项目中应调用真实的云函数
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // 模拟数据
+    stats.value = {
+      sales: '¥12,345',
+      inventory: '1,234',
+      orders: '56',
+      shops: '3'
+    }
+  } catch (error) {
+    uni.showToast({
+      title: '获取数据失败',
+      icon: 'none'
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchDashboardData()
+})
 </script>
 
 <style scoped>
@@ -79,6 +116,9 @@ const navigateTo = (url: string) => {
 }
 
 .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 30rpx;
 }
 
@@ -86,6 +126,16 @@ const navigateTo = (url: string) => {
   font-size: 36rpx;
   font-weight: bold;
   color: #333;
+}
+
+.refresh-btn {
+  background: none;
+  border: none;
+  padding: 10rpx;
+}
+
+.refresh-icon {
+  font-size: 28rpx;
 }
 
 .stats-container {
@@ -113,6 +163,19 @@ const navigateTo = (url: string) => {
 
 .stat-label {
   font-size: 24rpx;
+  color: #666;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200rpx;
+  margin-bottom: 40rpx;
+}
+
+.loading-text {
+  font-size: 28rpx;
   color: #666;
 }
 
