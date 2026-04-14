@@ -1,0 +1,28 @@
+{
+  "name": "multi-shop-erp",
+  "version": "1.0.0",
+  "description": "多店铺手机实体店铺ERP系统",
+  "private": true,
+  "scripts": {
+    "dev:mp-weixin": "uni-app-cli dev mp-weixin",
+    "dev:h5": "uni-app-cli dev h5",
+    "build:mp-weixin": "uni-app-cli build mp-weixin",
+    "build:h5": "uni-app-cli build h5"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "^3.0.0",
+    "@dcloudio/uni-ui": "^1.4.0",
+    "pinia": "^2.1.7",
+    "uview-plus": "^3.1.30"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "^3.4.8",
+    "@dcloudio/uni-automator": "^3.0.0",
+    "@dcloudio/uni-cli-shared": "^3.0.0",
+    "@dcloudio/uni-migration": "^3.0.0",
+    "@dcloudio/uni-template-compiler": "^3.0.0",
+    "@vue/compiler-sfc": "^3.3.4",
+    "typescript": "^4.9.5",
+    "vite": "^4.4.9"
+  }
+}

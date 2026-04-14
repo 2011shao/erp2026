@@ -1,0 +1,10 @@
+{
+  "passwordSecret": "multi-shop-erp-secret-key",
+  "tokenSecret": "multi-shop-erp-token-secret",
+  "tokenExpiresIn": 7200,
+  "tokenExpiresThreshold": 600,
+  "passwordErrorLimit": 6,
+  "passwordErrorRetryTime": 3600,
+  "autoSetInviteCode": true,
+  "forceInviteCode": false
+}
