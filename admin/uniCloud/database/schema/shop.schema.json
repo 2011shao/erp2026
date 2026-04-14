@@ -1,0 +1,46 @@
+{
+  "bsonType": "object",
+  "required": ["name", "status"],
+  "permission": {
+    "read": "doc._id == auth.shopId || auth.role == 'super_admin'",
+    "create": "auth.role == 'super_admin'",
+    "update": "doc._id == auth.shopId || auth.role == 'super_admin'",
+    "delete": false
+  },
+  "properties": {
+    "_id": {
+      "description": "ID，系统自动生成"
+    },
+    "name": {
+      "bsonType": "string",
+      "description": "店铺名称",
+      "maxLength": 100
+    },
+    "address": {
+      "bsonType": "string",
+      "description": "店铺地址",
+      "maxLength": 200
+    },
+    "phone": {
+      "bsonType": "string",
+      "description": "联系电话",
+      "maxLength": 20
+    },
+    "status": {
+      "bsonType": "string",
+      "description": "状态：active-正常，disabled-禁用",
+      "enum": ["active", "disabled"]
+    },
+    "createTime": {
+      "bsonType": "timestamp",
+      "description": "创建时间",
+      "forceDefaultValue": {
+        "$env": "now"
+      }
+    },
+    "updateTime": {
+      "bsonType": "timestamp",
+      "description": "更新时间"
+    }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "bsonType": "object",
+  "required": ["shopId", "name", "categoryId", "salePrice"],
+  "permission": {
+    "read": "doc.shopId == auth.shopId",
+    "create": "doc.shopId == auth.shopId",
+    "update": "doc.shopId == auth.shopId",
+    "delete": "doc.shopId == auth.shopId"
+  },
+  "properties": {
+    "_id": {
+      "description": "ID，系统自动生成"
+    },
+    "shopId": {
+      "bsonType": "string",
+      "description": "所属店铺ID"
+    },
+    "categoryId": {
+      "bsonType": "string",
+      "description": "分类ID"
+    },
+    "name": {
+      "bsonType": "string",
+      "description": "商品名称",
+      "maxLength": 200
+    },
+    "barcode": {
+      "bsonType": "string",
+      "description": "商品条码",
+      "maxLength": 50
+    },
+    "spec": {
+      "bsonType": "string",
+      "description": "规格型号",
+      "maxLength": 100
+    },
+    "unit": {
+      "bsonType": "string",
+      "description": "计量单位",
+      "maxLength": 20,
+      "defaultValue": "台"
+    },
+    "purchasePrice": {
+      "bsonType": "decimal",
+      "description": "进货价",
+      "minimum": 0
+    },
+    "salePrice": {
+      "bsonType": "decimal",
+      "description": "销售价",
+      "minimum": 0
+    },
+    "memberPrice": {
+      "bsonType": "decimal",
+      "description": "会员价",
+      "minimum": 0
+    },
+    "stock": {
+      "bsonType": "int",
+      "description": "库存数量",
+      "minimum": 0,
+      "defaultValue": 0
+    },
+    "warningStock": {
+      "bsonType": "int",
+      "description": "预警库存",
+      "minimum": 0,
+      "defaultValue": 10
+    },
+    "image": {
+      "bsonType": "string",
+      "description": "商品图片URL"
+    },
+    "status": {
+      "bsonType": "string",
+      "description": "状态：on_sale-在售，off_sale-下架",
+      "enum": ["on_sale", "off_sale"],
+      "defaultValue": "on_sale"
+    },
+    "createTime": {
+      "bsonType": "timestamp",
+      "description": "创建时间",
+      "forceDefaultValue": {
+        "$env": "now"
+      }
+    },
+    "updateTime": {
+      "bsonType": "timestamp",
+      "description": "更新时间"
+    }
+  }
+}

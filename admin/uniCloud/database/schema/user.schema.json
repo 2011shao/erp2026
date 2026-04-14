@@ -1,0 +1,58 @@
+{
+  "bsonType": "object",
+  "required": ["username", "password", "role", "shopId"],
+  "permission": {
+    "read": "doc.shopId == auth.shopId || auth.role == 'super_admin'",
+    "create": "auth.role == 'super_admin' || auth.role == 'shop_admin'",
+    "update": "doc.shopId == auth.shopId || auth.role == 'super_admin'",
+    "delete": "auth.role == 'super_admin' || auth.role == 'shop_admin'"
+  },
+  "properties": {
+    "_id": {
+      "description": "ID，系统自动生成"
+    },
+    "shopId": {
+      "bsonType": "string",
+      "description": "所属店铺ID"
+    },
+    "username": {
+      "bsonType": "string",
+      "description": "用户名",
+      "maxLength": 50
+    },
+    "password": {
+      "bsonType": "string",
+      "description": "密码（加密存储）"
+    },
+    "realName": {
+      "bsonType": "string",
+      "description": "真实姓名",
+      "maxLength": 50
+    },
+    "role": {
+      "bsonType": "string",
+      "description": "角色：super_admin-超级管理员，shop_admin-店铺管理员，cashier-收银员，warehouse-仓库管理员",
+      "enum": ["super_admin", "shop_admin", "cashier", "warehouse"]
+    },
+    "permissions": {
+      "bsonType": "array",
+      "description": "权限列表",
+      "items": {
+        "bsonType": "string"
+      }
+    },
+    "status": {
+      "bsonType": "string",
+      "description": "状态：active-正常，disabled-禁用",
+      "enum": ["active", "disabled"],
+      "defaultValue": "active"
+    },
+    "createTime": {
+      "bsonType": "timestamp",
+      "description": "创建时间",
+      "forceDefaultValue": {
+        "$env": "now"
+      }
+    }
+  }
+}
