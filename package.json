@@ -4,25 +4,39 @@
   "description": "多店铺手机实体店铺ERP系统",
   "private": true,
   "scripts": {
-    "dev:mp-weixin": "uni-app-cli dev mp-weixin --dir app",
-    "dev:h5": "uni-app-cli dev h5 --dir app",
-    "build:mp-weixin": "uni-app-cli build mp-weixin --dir app",
-    "build:h5": "uni-app-cli build h5 --dir app"
+    "dev:mp-weixin": "uni -p mp-weixin",
+    "dev:h5": "uni -p h5",
+    "build:mp-weixin": "uni build -p mp-weixin",
+    "build:h5": "uni build -p h5"
   },
   "dependencies": {
-    "@dcloudio/uni-app": "latest",
-    "@dcloudio/uni-ui": "latest",
-    "vuex": "^3.6.2",
-    "uview-plus": "^3.1.30"
+    "@dcloudio/uni-app": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-app-plus": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-components": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-h5": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-mp-alipay": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-mp-baidu": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-mp-jd": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-mp-kuaishou": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-mp-lark": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-mp-qq": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-mp-toutiao": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-mp-weixin": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-mp-xhs": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-quickapp-webview": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-ui": "^1.4.0",
+    "pinia": "^2.1.7",
+    "uview-plus": "^3.1.30",
+    "vue": "^3.4.21"
   },
   "devDependencies": {
-    "@dcloudio/types": "latest",
-    "@dcloudio/uni-automator": "latest",
-    "@dcloudio/uni-cli-shared": "latest",
-    "@dcloudio/uni-migration": "latest",
-    "@dcloudio/uni-template-compiler": "latest",
-    "@vue/compiler-sfc": "^3.3.4",
+    "@dcloudio/types": "^3.4.8",
+    "@dcloudio/uni-automator": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/uni-cli-shared": "3.0.0-alpha-4020920240930001",
+    "@dcloudio/vite-plugin-uni": "3.0.0-alpha-4020920240930001",
+    "@vue/runtime-core": "^3.4.21",
     "typescript": "^4.9.5",
-    "vite": "^4.4.9"
+    "vite": "^5.2.8",
+    "vue-tsc": "^2.0.7"
   }
 }
