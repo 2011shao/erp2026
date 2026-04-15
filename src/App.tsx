@@ -10,6 +10,8 @@ import { shopApi, productApi, inventoryApi, salesApi, financialApi } from './api
 import { LogService } from './services/logService';
 import { debounce } from './utils/requestUtils';
 import { ErrorHandler } from './utils/errorHandler';
+import { getRoles, getRole, createRole, updateRole, deleteRole, getRolePermissions, updateRolePermissions } from './services/roleService';
+import { getPermissions, getPermission, createPermission, updatePermission, deletePermission } from './services/permissionService';
 
 const { Header, Content, Sider } = Layout;
 const { Search } = Input;
