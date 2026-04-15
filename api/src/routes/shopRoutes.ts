@@ -35,9 +35,24 @@ router.get('/', authenticate, async (req, res, next) => {
       prisma.shop.count({ where }),
     ]);
 
+    // 获取所有相关的用户信息来补充 manager 字段
+    const managerIds = shops.map(shop => shop.managerId);
+    const managers = await prisma.user.findMany({
+      where: { id: { in: managerIds } },
+      select: { id: true, username: true }
+    });
+    
+    const managerMap = new Map(managers.map(m => [m.id, m.username]));
+    
+    // 添加 manager 字段到每个 shop
+    const shopsWithManager = shops.map(shop => ({
+      ...shop,
+      manager: managerMap.get(shop.managerId) || '未知'
+    }));
+
     res.json({
       success: true,
-      data: shops,
+      data: shopsWithManager,
       pagination: {
         page,
         limit,

@@ -6,7 +6,7 @@ import { ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarO
 import * as XLSX from 'xlsx';
 import { useAuthStore, filterMenuByPermission } from './store/authStore';
 import { menuConfig } from './config/menu';
-import { shopApi, productApi, inventoryApi, salesApi, financialApi } from './api';
+import { shopApi, productApi, inventoryApi, salesApi, financialApi, userApi, reportApi } from './api';
 import { LogService } from './services/logService';
 import { debounce } from './utils/requestUtils';
 import { ErrorHandler } from './utils/errorHandler';
@@ -94,11 +94,52 @@ const App: React.FC = () => {
 
   // 全局搜索处理
   const handleSearch = useCallback(
-    debounce((value: string) => {
-      message.info(`搜索: ${value}`);
-      // 这里可以实现全局搜索逻辑
+    debounce(async (value: string) => {
+      if (!value.trim()) {
+        return;
+      }
+      
       LogService.logUserAction('search', 'global', undefined, { keyword: value });
-    }, 300),
+      
+      try {
+        // 搜索店铺
+        const shopsResponse = await shopApi.getAll({ search: value });
+        // 搜索商品
+        const productsResponse = await productApi.getAll({ search: value });
+        
+        const results = [];
+        
+        if (shopsResponse.data && shopsResponse.data.length > 0) {
+          results.push(...shopsResponse.data.map((shop: any) => ({
+            type: 'shop',
+            id: shop.id,
+            name: shop.name,
+            description: shop.address,
+            path: '/shops'
+          })));
+        }
+        
+        if (productsResponse.data && productsResponse.data.length > 0) {
+          results.push(...productsResponse.data.map((product: any) => ({
+            type: 'product',
+            id: product.id,
+            name: product.name,
+            description: `${product.brand} ${product.model} - ¥${product.price}`,
+            path: '/products'
+          })));
+        }
+        
+        if (results.length > 0) {
+          const resultText = results.map(r => `${r.type === 'shop' ? '店铺' : '商品'}: ${r.name}`).join('\n');
+          message.info(`找到 ${results.length} 条结果:\n${resultText}`, 5);
+        } else {
+          message.info(`未找到与 "${value}" 相关的结果`);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        message.error('搜索失败，请重试');
+      }
+    }, 500),
     []
   );
 
@@ -386,6 +427,7 @@ const HomePage: React.FC = () => {
 const ShopPage: React.FC = () => {
   const [shops, setShops] = React.useState<any[]>([]);
   const [filteredShops, setFilteredShops] = React.useState<any[]>([]);
+  const [users, setUsers] = React.useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isBatchEditModalOpen, setIsBatchEditModalOpen] = React.useState(false);
   const [editingShop, setEditingShop] = React.useState<any>(null);
@@ -395,6 +437,7 @@ const ShopPage: React.FC = () => {
   const [searchValue, setSearchValue] = React.useState('');
   const [selectedManager, setSelectedManager] = React.useState('');
   const [loading, setLoading] = React.useState(true);
+  const [usersLoading, setUsersLoading] = React.useState(true);
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = React.useState(false);
   const [advancedSearch, setAdvancedSearch] = React.useState({
     name: '',
@@ -402,6 +445,23 @@ const ShopPage: React.FC = () => {
     phone: '',
     manager: ''
   });
+
+  // 从API获取用户列表
+  React.useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setUsersLoading(true);
+        const response = await userApi.getAll();
+        setUsers(response.data || []);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   // 从API获取店铺数据
   React.useEffect(() => {
@@ -414,9 +474,9 @@ const ShopPage: React.FC = () => {
         console.error('Error fetching shops:', error);
         // 失败时使用模拟数据
         setShops([
-          { id: '1', name: '北京旗舰店', address: '北京市朝阳区', phone: '13800138001', manager: '张三' },
-          { id: '2', name: '上海分店', address: '上海市浦东新区', phone: '13800138002', manager: '李四' },
-          { id: '3', name: '广州分店', address: '广州市天河区', phone: '13800138003', manager: '王五' },
+          { id: '1', name: '北京旗舰店', address: '北京市朝阳区', phone: '13800138001', manager: 'admin', managerId: '1' },
+          { id: '2', name: '上海分店', address: '上海市浦东新区', phone: '13800138002', manager: 'admin', managerId: '1' },
+          { id: '3', name: '广州分店', address: '广州市天河区', phone: '13800138003', manager: 'admin', managerId: '1' },
         ]);
       } finally {
         setLoading(false);
@@ -509,7 +569,12 @@ const ShopPage: React.FC = () => {
   const showModal = (shop?: any) => {
     if (shop) {
       setEditingShop(shop);
-      form.setFieldsValue(shop);
+      form.setFieldsValue({
+        name: shop.name,
+        address: shop.address,
+        phone: shop.phone,
+        managerId: shop.managerId
+      });
     } else {
       setEditingShop(null);
       form.resetFields();
@@ -898,14 +963,17 @@ const ShopPage: React.FC = () => {
             <Input placeholder="请输入电话" />
           </Form.Item>
           <Form.Item
-            name="manager"
+            name="managerId"
             label="负责人"
             rules={[
-              { required: true, message: '请输入负责人' },
-              { min: 2, max: 20, message: '负责人姓名长度应在2-20个字符之间' }
+              { required: true, message: '请选择负责人' },
             ]}
           >
-            <Input placeholder="请输入负责人" />
+            <Select placeholder="请选择负责人" loading={usersLoading}>
+              {users.map(user => (
+                <Select.Option key={user.id} value={user.id}>{user.username}</Select.Option>
+              ))}
+            </Select>
           </Form.Item>
         </Form>
       </Modal>
@@ -934,10 +1002,14 @@ const ShopPage: React.FC = () => {
             <Input placeholder="请输入电话（留空不修改）" />
           </Form.Item>
           <Form.Item
-            name="manager"
+            name="managerId"
             label="负责人"
           >
-            <Input placeholder="请输入负责人（留空不修改）" />
+            <Select placeholder="请选择负责人（留空不修改）" loading={usersLoading} allowClear>
+              {users.map(user => (
+                <Select.Option key={user.id} value={user.id}>{user.username}</Select.Option>
+              ))}
+            </Select>
           </Form.Item>
         </Form>
       </Modal>
@@ -3149,64 +3221,96 @@ const ReportPage: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   
   // 销售趋势数据
-  const [salesData, setSalesData] = React.useState([
-    { month: '1月', sales: 10000 },
-    { month: '2月', sales: 15000 },
-    { month: '3月', sales: 12000 },
-    { month: '4月', sales: 18000 },
-    { month: '5月', sales: 20000 },
-    { month: '6月', sales: 25000 },
-  ]);
+  const [salesData, setSalesData] = React.useState<any[]>([]);
 
   // 库存状况数据
-  const [inventoryData, setInventoryData] = React.useState([
-    { name: 'iPhone 15', stock: 50, minStock: 10 },
-    { name: 'MacBook Pro', stock: 20, minStock: 5 },
-    { name: 'iPad Pro', stock: 30, minStock: 8 },
-    { name: 'AirPods Pro', stock: 100, minStock: 20 },
-  ]);
+  const [inventoryStatus, setInventoryStatus] = React.useState<any>(null);
 
   // 财务分析数据
-  const [financialData, setFinancialData] = React.useState([
-    { category: '销售', income: 50000, expense: 0 },
-    { category: '采购', income: 0, expense: 15000 },
-    { category: '租金', income: 0, expense: 5000 },
-    { category: '薪资', income: 0, expense: 10000 },
-    { category: '其他', income: 5000, expense: 3000 },
-  ]);
+  const [financialAnalysis, setFinancialAnalysis] = React.useState<any>(null);
 
   // 店铺销售对比
-  const [shopSalesData, setShopSalesData] = React.useState([
-    { name: '北京旗舰店', sales: 30000 },
-    { name: '上海分店', sales: 20000 },
-    { name: '广州分店', sales: 15000 },
-  ]);
+  const [shopComparisonData, setShopComparisonData] = React.useState<any[]>([]);
+
+  // 概览数据
+  const [overviewData, setOverviewData] = React.useState<any>(null);
+
+  // 加载报表数据
+  const loadReportData = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      // 并行加载所有报表数据
+      const [salesTrendRes, inventoryStatusRes, financialAnalysisRes, shopComparisonRes, overviewRes] = await Promise.all([
+        reportApi.getSalesTrend(),
+        reportApi.getInventoryStatus(),
+        reportApi.getFinancialAnalysis(),
+        reportApi.getShopComparison(),
+        reportApi.getOverview(),
+      ]);
+
+      // 处理销售趋势数据
+      if (salesTrendRes.data) {
+        setSalesData(salesTrendRes.data.map((item: any) => ({
+          month: item.month.split('-')[1] + '月',
+          sales: item.sales,
+          orders: item.orders
+        })));
+      }
+
+      // 处理库存状况数据 - 转换为前端需要的格式
+      if (inventoryStatusRes.data) {
+        // 后端返回的是统计对象，我们需要转换为数组格式用于图表
+        const inventoryArray = [
+          { name: '总商品数', stock: inventoryStatusRes.data.totalProducts, minStock: 0 },
+          { name: '总库存量', stock: inventoryStatusRes.data.totalStock, minStock: 0 },
+          { name: '低库存商品', stock: inventoryStatusRes.data.lowStock, minStock: 0 }
+        ];
+        setInventoryStatus(inventoryArray);
+      }
+
+      // 处理财务分析数据 - 转换为前端需要的格式
+      if (financialAnalysisRes.data) {
+        // 后端返回的是统计对象，我们需要转换为数组格式用于图表
+        const financialArray = [
+          { category: '总收入', income: financialAnalysisRes.data.totalIncome, expense: 0 },
+          { category: '总支出', income: 0, expense: financialAnalysisRes.data.totalExpense },
+          { category: '净收入', income: financialAnalysisRes.data.netProfit, expense: 0 }
+        ];
+        setFinancialAnalysis(financialArray);
+      }
+
+      // 处理店铺对比数据 - 转换字段名
+      if (shopComparisonRes.data) {
+        const shopData = shopComparisonRes.data.map((item: any) => ({
+          name: item.shopName,
+          sales: item.totalSales
+        }));
+        setShopComparisonData(shopData);
+      }
+
+      // 处理概览数据
+      if (overviewRes.data) {
+        setOverviewData(overviewRes.data);
+      }
+
+      message.success('报表数据加载成功');
+    } catch (error) {
+      console.error('Error fetching report data:', error);
+      message.error('获取报表数据失败，请重试');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 初始化加载数据
+  React.useEffect(() => {
+    loadReportData();
+  }, [loadReportData]);
 
   // 处理日期范围变化
   const handleDateRangeChange = async (dates: [string, string]) => {
     setDateRange(dates);
-    setLoading(true);
-    try {
-      // 调用API获取对应日期范围的数据
-      // 这里使用模拟数据，实际项目中应该调用API
-      setTimeout(() => {
-        // 模拟数据更新
-        setSalesData([
-          { month: '1月', sales: 12000 },
-          { month: '2月', sales: 18000 },
-          { month: '3月', sales: 15000 },
-          { month: '4月', sales: 22000 },
-          { month: '5月', sales: 25000 },
-          { month: '6月', sales: 30000 },
-        ]);
-        setLoading(false);
-        message.success('数据已更新');
-      }, 1000);
-    } catch (error) {
-      console.error('Error fetching report data:', error);
-      setLoading(false);
-      message.error('获取数据失败');
-    }
+    await loadReportData();
   };
 
   // 初始化图表
@@ -3293,17 +3397,17 @@ const ReportPage: React.FC = () => {
             window.charts.inventoryChart = new Chart(inventoryCtx, {
               type: 'bar',
               data: {
-                labels: inventoryData.map(item => item.name),
+                labels: inventoryStatus?.map((item: any) => item.name) || [],
                 datasets: [
                   {
                     label: '当前库存',
-                    data: inventoryData.map(item => item.stock),
+                    data: inventoryStatus?.map((item: any) => item.stock) || [],
                     backgroundColor: 'rgba(54, 162, 235, 0.6)',
                     borderRadius: 4
                   },
                   {
                     label: '最低库存',
-                    data: inventoryData.map(item => item.minStock),
+                    data: inventoryStatus?.map((item: any) => item.minStock) || [],
                     backgroundColor: 'rgba(255, 99, 132, 0.6)',
                     borderRadius: 4
                   }
@@ -3338,17 +3442,17 @@ const ReportPage: React.FC = () => {
             window.charts.financialChart = new Chart(financialCtx, {
               type: 'bar',
               data: {
-                labels: financialData.map(item => item.category),
+                labels: financialAnalysis?.map((item: any) => item.category) || [],
                 datasets: [
                   {
                     label: '收入',
-                    data: financialData.map(item => item.income),
+                    data: financialAnalysis?.map((item: any) => item.income) || [],
                     backgroundColor: 'rgba(75, 192, 192, 0.6)',
                     borderRadius: 4
                   },
                   {
                     label: '支出',
-                    data: financialData.map(item => item.expense),
+                    data: financialAnalysis?.map((item: any) => item.expense) || [],
                     backgroundColor: 'rgba(255, 99, 132, 0.6)',
                     borderRadius: 4
                   }
@@ -3393,9 +3497,9 @@ const ReportPage: React.FC = () => {
             window.charts.shopSalesChart = new Chart(shopSalesCtx, {
               type: 'pie',
               data: {
-                labels: shopSalesData.map(item => item.name),
+                labels: shopComparisonData?.map((item: any) => item.name) || [],
                 datasets: [{
-                  data: shopSalesData.map(item => item.sales),
+                  data: shopComparisonData?.map((item: any) => item.sales) || [],
                   backgroundColor: [
                     'rgba(255, 99, 132, 0.6)',
                     'rgba(54, 162, 235, 0.6)',
@@ -3493,7 +3597,7 @@ const ReportPage: React.FC = () => {
     };
 
     loadChartJS();
-  }, [salesData, inventoryData, financialData, shopSalesData]);
+  }, [salesData, inventoryStatus, financialAnalysis, shopComparisonData]);
 
   return (
     <div>
@@ -3553,39 +3657,39 @@ const ReportPage: React.FC = () => {
       {/* 统计卡片 */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} md={6}>
-          <Card>
+          <Card loading={loading}>
             <Statistic
               title="总销售额"
-              value={65000}
+              value={overviewData?.totalSales || 0}
               prefix="¥"
               valueStyle={{ color: '#1890ff' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card>
+          <Card loading={loading}>
             <Statistic
               title="总利润"
-              value={22000}
+              value={overviewData?.netProfit || 0}
               prefix="¥"
               valueStyle={{ color: '#52c41a' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card>
+          <Card loading={loading}>
             <Statistic
               title="总订单数"
-              value={100}
+              value={overviewData?.orders || 0}
               valueStyle={{ color: '#faad14' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card>
+          <Card loading={loading}>
             <Statistic
               title="商品种类"
-              value={50}
+              value={overviewData?.products || 0}
               valueStyle={{ color: '#f5222d' }}
             />
           </Card>
@@ -3596,21 +3700,51 @@ const ReportPage: React.FC = () => {
 };
 
 const UserPage: React.FC = () => {
-  const [users, setUsers] = React.useState([
-    { id: '1', username: 'admin', role: 'admin', shopId: null, createdAt: '2026-04-15 08:00:00' },
-    { id: '2', username: 'zhang san', role: 'manager', shopId: '1', createdAt: '2026-04-15 09:00:00' },
-    { id: '3', username: 'li si', role: 'staff', shopId: '1', createdAt: '2026-04-15 10:00:00' },
-    { id: '4', username: 'wang wu', role: 'manager', shopId: '2', createdAt: '2026-04-15 11:00:00' },
-    { id: '5', username: 'zhao liu', role: 'staff', shopId: '3', createdAt: '2026-04-15 12:00:00' },
-  ]);
+  const [users, setUsers] = React.useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<any>(null);
   const [form] = Form.useForm();
+  const [loading, setLoading] = React.useState(false);
+  const [searchValue, setSearchValue] = React.useState('');
+  const [selectedRole, setSelectedRole] = React.useState('');
+
+  // 加载用户数据
+  const loadUsers = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await userApi.getAll();
+      setUsers(response.data || []);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      message.error('加载用户列表失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 初始化加载
+  React.useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  // 过滤用户数据
+  const filteredUsers = React.useMemo(() => {
+    return users.filter(user => {
+      const matchesSearch = !searchValue || 
+        user.username.toLowerCase().includes(searchValue.toLowerCase());
+      const matchesRole = !selectedRole || user.role === selectedRole;
+      return matchesSearch && matchesRole;
+    });
+  }, [users, searchValue, selectedRole]);
 
   const showModal = (user?: any) => {
     if (user) {
       setEditingUser(user);
-      form.setFieldsValue(user);
+      form.setFieldsValue({
+        username: user.username,
+        role: user.role,
+        shopId: user.shopId,
+      });
     } else {
       setEditingUser(null);
       form.resetFields();
@@ -3623,23 +3757,36 @@ const UserPage: React.FC = () => {
     form.resetFields();
   };
 
-  const handleOk = () => {
-    form.validateFields().then(values => {
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      
       if (editingUser) {
-        setUsers(users.map(user => user.id === editingUser.id ? { ...user, ...values } : user));
+        await userApi.update(editingUser.id, values);
         message.success('用户更新成功');
       } else {
-        setUsers([...users, { id: String(users.length + 1), ...values, createdAt: new Date().toLocaleString('zh-CN') }]);
+        await userApi.create(values);
         message.success('用户添加成功');
       }
+      
       setIsModalOpen(false);
       form.resetFields();
-    });
+      await loadUsers();
+    } catch (error) {
+      console.error('Error saving user:', error);
+      message.error('操作失败，请重试');
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setUsers(users.filter(user => user.id !== id));
-    message.success('用户删除成功');
+  const handleDelete = async (id: string) => {
+    try {
+      await userApi.delete(id);
+      message.success('用户删除成功');
+      await loadUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      message.error('删除失败，请重试');
+    }
   };
 
   const columns = [
@@ -3659,7 +3806,7 @@ const UserPage: React.FC = () => {
       ) 
     },
     { title: '所属店铺', dataIndex: 'shopId', key: 'shopId', render: (shopId: any) => shopId || '全部店铺' },
-    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
+    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', render: (date: string) => new Date(date).toLocaleString('zh-CN') },
     { 
       title: '操作', 
       key: 'action', 
@@ -3679,11 +3826,46 @@ const UserPage: React.FC = () => {
         <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>添加用户</Button>
       </div>
 
+      {/* 搜索和筛选 */}
+      <Card className="mb-4" hoverable>
+        <Row gutter={[16, 16]} align="middle">
+          <Col xs={24} sm={12} md={8}>
+            <Input.Search
+              placeholder="搜索用户名"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              allowClear
+              style={{ width: '100%' }}
+            />
+          </Col>
+          <Col xs={24} sm={6} md={4}>
+            <Select
+              placeholder="按角色筛选"
+              value={selectedRole || undefined}
+              onChange={setSelectedRole}
+              allowClear
+              style={{ width: '100%' }}
+            >
+              <Select.Option value="admin">管理员</Select.Option>
+              <Select.Option value="manager">店长</Select.Option>
+              <Select.Option value="staff">员工</Select.Option>
+            </Select>
+          </Col>
+          <Col xs={24} sm={6} md={4} offset={8}>
+            <Button type="default" onClick={() => {
+              setSearchValue('');
+              setSelectedRole('');
+            }}>重置筛选</Button>
+          </Col>
+        </Row>
+      </Card>
+
       <Table 
         columns={columns} 
-        dataSource={users} 
+        dataSource={filteredUsers} 
         rowKey="id" 
         pagination={{ pageSize: 10 }}
+        loading={loading}
         style={{ marginBottom: 20 }}
       />
 
@@ -3706,6 +3888,15 @@ const UserPage: React.FC = () => {
           >
             <Input placeholder="请输入用户名" />
           </Form.Item>
+          {!editingUser && (
+            <Form.Item
+              name="password"
+              label="密码"
+              rules={[{ required: true, message: '请输入密码' }]}
+            >
+              <Input.Password placeholder="请输入密码" />
+            </Form.Item>
+          )}
           <Form.Item
             name="role"
             label="角色"
