@@ -87,6 +87,7 @@ export const useAuthStore = create<AuthState>()(
           set({ user, isAuthenticated: true, isLoading: false });
         } catch (error) {
           set({ error: 'Invalid credentials', isLoading: false });
+          throw error; // 抛出异常，让handleLogin函数捕获
         }
       },
 
