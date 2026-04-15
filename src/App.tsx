@@ -1,7 +1,7 @@
 import React from 'react';
-import { Layout, Menu, Button } from 'antd';
+import { Layout, Menu, Button, Table, Modal, Form, Input, Select, Card, Statistic, Row, Col, Tag, Space, message } from 'antd';
 import { Link, Routes, Route } from 'react-router-dom';
-import { HomeOutlined, ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarOutlined, BarChartOutlined, UserOutlined } from '@ant-design/icons';
+import { HomeOutlined, ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarOutlined, BarChartOutlined, UserOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 
 const { Header, Content, Sider } = Layout;
 
@@ -54,25 +54,49 @@ const App: React.FC = () => {
 const HomePage: React.FC = () => {
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">欢迎使用多门店 ERP 系统</h1>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-blue-100 p-4 rounded-lg">
-          <h3 className="font-bold">总店铺数</h3>
-          <p className="text-2xl">10</p>
-        </div>
-        <div className="bg-green-100 p-4 rounded-lg">
-          <h3 className="font-bold">总商品数</h3>
-          <p className="text-2xl">1000</p>
-        </div>
-        <div className="bg-yellow-100 p-4 rounded-lg">
-          <h3 className="font-bold">今日销售额</h3>
-          <p className="text-2xl">¥10,000</p>
-        </div>
-        <div className="bg-red-100 p-4 rounded-lg">
-          <h3 className="font-bold">库存总量</h3>
-          <p className="text-2xl">5000</p>
-        </div>
-      </div>
+      <h1 className="text-2xl font-bold mb-6">欢迎使用多门店 ERP 系统</h1>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="总店铺数"
+              value={10}
+              prefix={<ShopOutlined />}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="总商品数"
+              value={1000}
+              prefix={<ProductOutlined />}
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="今日销售额"
+              value={10000}
+              prefix="¥"
+              valueStyle={{ color: '#faad14' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="库存总量"
+              value={5000}
+              prefix={<StockOutlined />}
+              valueStyle={{ color: '#f5222d' }}
+            />
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 };
@@ -85,39 +109,41 @@ const ShopPage: React.FC = () => {
   ]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingShop, setEditingShop] = React.useState<any>(null);
-  const [formData, setFormData] = React.useState<any>({});
+  const [form] = Form.useForm();
 
   const showModal = (shop?: any) => {
     if (shop) {
       setEditingShop(shop);
-      setFormData(shop);
+      form.setFieldsValue(shop);
     } else {
       setEditingShop(null);
-      setFormData({});
+      form.resetFields();
     }
     setIsModalOpen(true);
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    form.resetFields();
   };
 
   const handleOk = () => {
-    if (editingShop) {
-      setShops(shops.map(shop => shop.id === editingShop.id ? { ...shop, ...formData } : shop));
-    } else {
-      setShops([...shops, { id: String(shops.length + 1), ...formData }]);
-    }
-    setIsModalOpen(false);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    form.validateFields().then(values => {
+      if (editingShop) {
+        setShops(shops.map(shop => shop.id === editingShop.id ? { ...shop, ...values } : shop));
+        message.success('店铺更新成功');
+      } else {
+        setShops([...shops, { id: String(shops.length + 1), ...values }]);
+        message.success('店铺添加成功');
+      }
+      setIsModalOpen(false);
+      form.resetFields();
+    });
   };
 
   const handleDelete = (id: string) => {
     setShops(shops.filter(shop => shop.id !== id));
+    message.success('店铺删除成功');
   };
 
   const columns = [
@@ -129,10 +155,10 @@ const ShopPage: React.FC = () => {
       title: '操作', 
       key: 'action', 
       render: (_: any, record: any) => (
-        <div>
-          <button className="mr-2 text-blue-500" onClick={() => showModal(record)}>编辑</button>
-          <button className="text-red-500" onClick={() => handleDelete(record.id)}>删除</button>
-        </div>
+        <Space size="middle">
+          <Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>编辑</Button>
+          <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
+        </Space>
       ) 
     },
   ];
@@ -141,88 +167,57 @@ const ShopPage: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">店铺管理</h1>
-        <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => showModal()}>添加店铺</button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>添加店铺</Button>
       </div>
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">店铺名称</th>
-            <th className="border p-2">地址</th>
-            <th className="border p-2">电话</th>
-            <th className="border p-2">负责人</th>
-            <th className="border p-2">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {shops.map(shop => (
-            <tr key={shop.id}>
-              <td className="border p-2">{shop.name}</td>
-              <td className="border p-2">{shop.address}</td>
-              <td className="border p-2">{shop.phone}</td>
-              <td className="border p-2">{shop.manager}</td>
-              <td className="border p-2">
-                <button className="mr-2 text-blue-500" onClick={() => showModal(shop)}>编辑</button>
-                <button className="text-red-500" onClick={() => handleDelete(shop.id)}>删除</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Table 
+        columns={columns} 
+        dataSource={shops} 
+        rowKey="id" 
+        pagination={{ pageSize: 10 }}
+        style={{ marginBottom: 20 }}
+      />
       
       {/* 模态框 */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4">{editingShop ? '编辑店铺' : '添加店铺'}</h2>
-            <form>
-              <div className="mb-4">
-                <label className="block mb-2">店铺名称</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="name" 
-                  value={formData.name || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">地址</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="address" 
-                  value={formData.address || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">电话</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="phone" 
-                  value={formData.phone || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">负责人</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="manager" 
-                  value={formData.manager || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="flex justify-end">
-                <button type="button" className="mr-2 px-4 py-2 border" onClick={handleCancel}>取消</button>
-                <button type="button" className="px-4 py-2 bg-blue-500 text-white" onClick={handleOk}>确定</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <Modal
+        title={editingShop ? '编辑店铺' : '添加店铺'}
+        open={isModalOpen}
+        onCancel={handleCancel}
+        onOk={handleOk}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+        >
+          <Form.Item
+            name="name"
+            label="店铺名称"
+            rules={[{ required: true, message: '请输入店铺名称' }]}
+          >
+            <Input placeholder="请输入店铺名称" />
+          </Form.Item>
+          <Form.Item
+            name="address"
+            label="地址"
+            rules={[{ required: true, message: '请输入地址' }]}
+          >
+            <Input placeholder="请输入地址" />
+          </Form.Item>
+          <Form.Item
+            name="phone"
+            label="电话"
+            rules={[{ required: true, message: '请输入电话' }]}
+          >
+            <Input placeholder="请输入电话" />
+          </Form.Item>
+          <Form.Item
+            name="manager"
+            label="负责人"
+            rules={[{ required: true, message: '请输入负责人' }]}
+          >
+            <Input placeholder="请输入负责人" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
@@ -236,175 +231,148 @@ const ProductPage: React.FC = () => {
   ]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<any>(null);
-  const [formData, setFormData] = React.useState<any>({});
+  const [form] = Form.useForm();
 
   const showModal = (product?: any) => {
     if (product) {
       setEditingProduct(product);
-      setFormData(product);
+      form.setFieldsValue(product);
     } else {
       setEditingProduct(null);
-      setFormData({});
+      form.resetFields();
     }
     setIsModalOpen(true);
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    form.resetFields();
   };
 
   const handleOk = () => {
-    if (editingProduct) {
-      setProducts(products.map(product => product.id === editingProduct.id ? { ...product, ...formData } : product));
-    } else {
-      setProducts([...products, { id: String(products.length + 1), ...formData }]);
-    }
-    setIsModalOpen(false);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'price' || name === 'costPrice' || name === 'stock' ? Number(value) : value }));
+    form.validateFields().then(values => {
+      if (editingProduct) {
+        setProducts(products.map(product => product.id === editingProduct.id ? { ...product, ...values } : product));
+        message.success('商品更新成功');
+      } else {
+        setProducts([...products, { id: String(products.length + 1), ...values }]);
+        message.success('商品添加成功');
+      }
+      setIsModalOpen(false);
+      form.resetFields();
+    });
   };
 
   const handleDelete = (id: string) => {
     setProducts(products.filter(product => product.id !== id));
+    message.success('商品删除成功');
   };
+
+  const columns = [
+    { title: '商品名称', dataIndex: 'name', key: 'name' },
+    { title: '分类', dataIndex: 'category', key: 'category' },
+    { title: '品牌', dataIndex: 'brand', key: 'brand' },
+    { title: '型号', dataIndex: 'model', key: 'model' },
+    { title: '价格', dataIndex: 'price', key: 'price', render: (price: number) => `¥${price}` },
+    { title: '成本价', dataIndex: 'costPrice', key: 'costPrice', render: (costPrice: number) => `¥${costPrice}` },
+    { title: '库存', dataIndex: 'stock', key: 'stock' },
+    { title: '所属店铺', dataIndex: 'shopId', key: 'shopId' },
+    { 
+      title: '操作', 
+      key: 'action', 
+      render: (_: any, record: any) => (
+        <Space size="middle">
+          <Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>编辑</Button>
+          <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
+        </Space>
+      ) 
+    },
+  ];
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">商品管理</h1>
-        <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => showModal()}>添加商品</button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>添加商品</Button>
       </div>
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">商品名称</th>
-            <th className="border p-2">分类</th>
-            <th className="border p-2">品牌</th>
-            <th className="border p-2">型号</th>
-            <th className="border p-2">价格</th>
-            <th className="border p-2">成本价</th>
-            <th className="border p-2">库存</th>
-            <th className="border p-2">所属店铺</th>
-            <th className="border p-2">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map(product => (
-            <tr key={product.id}>
-              <td className="border p-2">{product.name}</td>
-              <td className="border p-2">{product.category}</td>
-              <td className="border p-2">{product.brand}</td>
-              <td className="border p-2">{product.model}</td>
-              <td className="border p-2">¥{product.price}</td>
-              <td className="border p-2">¥{product.costPrice}</td>
-              <td className="border p-2">{product.stock}</td>
-              <td className="border p-2">{product.shopId}</td>
-              <td className="border p-2">
-                <button className="mr-2 text-blue-500" onClick={() => showModal(product)}>编辑</button>
-                <button className="text-red-500" onClick={() => handleDelete(product.id)}>删除</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Table 
+        columns={columns} 
+        dataSource={products} 
+        rowKey="id" 
+        pagination={{ pageSize: 10 }}
+        style={{ marginBottom: 20 }}
+      />
       
       {/* 模态框 */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4">{editingProduct ? '编辑商品' : '添加商品'}</h2>
-            <form>
-              <div className="mb-4">
-                <label className="block mb-2">商品名称</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="name" 
-                  value={formData.name || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">分类</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="category" 
-                  value={formData.category || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">品牌</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="brand" 
-                  value={formData.brand || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">型号</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="model" 
-                  value={formData.model || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">价格</label>
-                <input 
-                  type="number" 
-                  className="w-full p-2 border" 
-                  name="price" 
-                  value={formData.price || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">成本价</label>
-                <input 
-                  type="number" 
-                  className="w-full p-2 border" 
-                  name="costPrice" 
-                  value={formData.costPrice || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">库存</label>
-                <input 
-                  type="number" 
-                  className="w-full p-2 border" 
-                  name="stock" 
-                  value={formData.stock || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">所属店铺</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="shopId" 
-                  value={formData.shopId || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="flex justify-end">
-                <button type="button" className="mr-2 px-4 py-2 border" onClick={handleCancel}>取消</button>
-                <button type="button" className="px-4 py-2 bg-blue-500 text-white" onClick={handleOk}>确定</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <Modal
+        title={editingProduct ? '编辑商品' : '添加商品'}
+        open={isModalOpen}
+        onCancel={handleCancel}
+        onOk={handleOk}
+        width={600}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+        >
+          <Form.Item
+            name="name"
+            label="商品名称"
+            rules={[{ required: true, message: '请输入商品名称' }]}
+          >
+            <Input placeholder="请输入商品名称" />
+          </Form.Item>
+          <Form.Item
+            name="category"
+            label="分类"
+            rules={[{ required: true, message: '请输入分类' }]}
+          >
+            <Input placeholder="请输入分类" />
+          </Form.Item>
+          <Form.Item
+            name="brand"
+            label="品牌"
+            rules={[{ required: true, message: '请输入品牌' }]}
+          >
+            <Input placeholder="请输入品牌" />
+          </Form.Item>
+          <Form.Item
+            name="model"
+            label="型号"
+            rules={[{ required: true, message: '请输入型号' }]}
+          >
+            <Input placeholder="请输入型号" />
+          </Form.Item>
+          <Form.Item
+            name="price"
+            label="价格"
+            rules={[{ required: true, message: '请输入价格' }]}
+          >
+            <Input type="number" placeholder="请输入价格" />
+          </Form.Item>
+          <Form.Item
+            name="costPrice"
+            label="成本价"
+            rules={[{ required: true, message: '请输入成本价' }]}
+          >
+            <Input type="number" placeholder="请输入成本价" />
+          </Form.Item>
+          <Form.Item
+            name="stock"
+            label="库存"
+            rules={[{ required: true, message: '请输入库存' }]}
+          >
+            <Input type="number" placeholder="请输入库存" />
+          </Form.Item>
+          <Form.Item
+            name="shopId"
+            label="所属店铺"
+            rules={[{ required: true, message: '请输入所属店铺' }]}
+          >
+            <Input placeholder="请输入所属店铺" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
@@ -422,210 +390,193 @@ const InventoryPage: React.FC = () => {
     { id: '3', productId: '2', productName: 'MacBook Pro', quantity: 3, type: 'in', reason: '采购入库', shopId: '1', createdAt: '2026-04-15 09:00:00' },
   ]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [formData, setFormData] = React.useState<any>({});
+  const [form] = Form.useForm();
 
   const showModal = () => {
-    setFormData({});
+    form.resetFields();
     setIsModalOpen(true);
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    form.resetFields();
   };
 
   const handleOk = () => {
-    // 处理库存调整
-    if (formData.type === 'in') {
-      setInventory(inventory.map(item => 
-        item.productId === formData.productId ? 
-        { ...item, currentStock: item.currentStock + formData.quantity } : item
-      ));
-    } else {
-      setInventory(inventory.map(item => 
-        item.productId === formData.productId ? 
-        { ...item, currentStock: Math.max(0, item.currentStock - formData.quantity) } : item
-      ));
-    }
-    
-    // 添加库存变动记录
-    const newLog = {
-      id: String(inventoryLogs.length + 1),
-      productId: formData.productId,
-      productName: inventory.find(item => item.productId === formData.productId)?.productName || '',
-      quantity: formData.quantity,
-      type: formData.type,
-      reason: formData.reason,
-      shopId: formData.shopId,
-      createdAt: new Date().toLocaleString('zh-CN'),
-    };
-    setInventoryLogs([...inventoryLogs, newLog]);
-    setIsModalOpen(false);
+    form.validateFields().then(values => {
+      // 处理库存调整
+      if (values.type === 'in') {
+        setInventory(inventory.map(item => 
+          item.productId === values.productId ? 
+          { ...item, currentStock: item.currentStock + values.quantity } : item
+        ));
+      } else {
+        setInventory(inventory.map(item => 
+          item.productId === values.productId ? 
+          { ...item, currentStock: Math.max(0, item.currentStock - values.quantity) } : item
+        ));
+      }
+      
+      // 添加库存变动记录
+      const newLog = {
+        id: String(inventoryLogs.length + 1),
+        productId: values.productId,
+        productName: inventory.find(item => item.productId === values.productId)?.productName || '',
+        quantity: values.quantity,
+        type: values.type,
+        reason: values.reason,
+        shopId: values.shopId,
+        createdAt: new Date().toLocaleString('zh-CN'),
+      };
+      setInventoryLogs([...inventoryLogs, newLog]);
+      message.success('库存调整成功');
+      setIsModalOpen(false);
+      form.resetFields();
+    });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'quantity' ? Number(value) : value }));
-  };
+  const inventoryColumns = [
+    { title: '商品名称', dataIndex: 'productName', key: 'productName' },
+    { title: '当前库存', dataIndex: 'currentStock', key: 'currentStock' },
+    { title: '最低库存', dataIndex: 'minStock', key: 'minStock' },
+    { title: '所属店铺', dataIndex: 'shopId', key: 'shopId' },
+    { 
+      title: '状态', 
+      key: 'status', 
+      render: (_: any, record: any) => (
+        <Tag color={record.currentStock <= record.minStock ? 'red' : 'green'}>
+          {record.currentStock <= record.minStock ? '库存不足' : '库存正常'}
+        </Tag>
+      ) 
+    },
+  ];
+
+  const logColumns = [
+    { title: '商品名称', dataIndex: 'productName', key: 'productName' },
+    { 
+      title: '变动数量', 
+      key: 'quantity', 
+      render: (_: any, record: any) => (
+        <span className={record.type === 'in' ? 'text-green-500' : 'text-red-500'}>
+          {record.type === 'in' ? '+' : '-'}{record.quantity}
+        </span>
+      ) 
+    },
+    { 
+      title: '变动类型', 
+      key: 'type', 
+      render: (_: any, record: any) => (
+        <Tag color={record.type === 'in' ? 'green' : 'red'}>
+          {record.type === 'in' ? '入库' : '出库'}
+        </Tag>
+      ) 
+    },
+    { title: '变动原因', dataIndex: 'reason', key: 'reason' },
+    { title: '所属店铺', dataIndex: 'shopId', key: 'shopId' },
+    { title: '变动时间', dataIndex: 'createdAt', key: 'createdAt' },
+  ];
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">库存管理</h1>
-        <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={showModal}>调整库存</button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={showModal}>调整库存</Button>
       </div>
 
       {/* 库存预警 */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold mb-2">库存预警</h2>
-        <div className="bg-yellow-50 p-4 rounded-lg">
-          {inventory.filter(item => item.currentStock <= item.minStock).length > 0 ? (
-            <ul>
-              {inventory.filter(item => item.currentStock <= item.minStock).map(item => (
-                <li key={item.id} className="text-red-500">
-                  {item.productName} 库存不足，当前库存: {item.currentStock}，最低库存: {item.minStock}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-green-500">所有商品库存正常</p>
-          )}
-        </div>
-      </div>
+      <Card className="mb-6">
+        <h2 className="text-xl font-bold mb-4">库存预警</h2>
+        {inventory.filter(item => item.currentStock <= item.minStock).length > 0 ? (
+          <ul>
+            {inventory.filter(item => item.currentStock <= item.minStock).map(item => (
+              <li key={item.id} className="text-red-500 mb-2">
+                {item.productName} 库存不足，当前库存: {item.currentStock}，最低库存: {item.minStock}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-green-500">所有商品库存正常</p>
+        )}
+      </Card>
 
       {/* 库存列表 */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold mb-2">库存列表</h2>
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border p-2">商品名称</th>
-              <th className="border p-2">当前库存</th>
-              <th className="border p-2">最低库存</th>
-              <th className="border p-2">所属店铺</th>
-              <th className="border p-2">状态</th>
-            </tr>
-          </thead>
-          <tbody>
-            {inventory.map(item => (
-              <tr key={item.id}>
-                <td className="border p-2">{item.productName}</td>
-                <td className="border p-2">{item.currentStock}</td>
-                <td className="border p-2">{item.minStock}</td>
-                <td className="border p-2">{item.shopId}</td>
-                <td className="border p-2">
-                  <span className={item.currentStock <= item.minStock ? 'text-red-500' : 'text-green-500'}>
-                    {item.currentStock <= item.minStock ? '库存不足' : '库存正常'}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Card className="mb-6">
+        <h2 className="text-xl font-bold mb-4">库存列表</h2>
+        <Table 
+          columns={inventoryColumns} 
+          dataSource={inventory} 
+          rowKey="id" 
+          pagination={{ pageSize: 10 }}
+        />
+      </Card>
 
       {/* 库存变动记录 */}
-      <div>
-        <h2 className="text-xl font-bold mb-2">库存变动记录</h2>
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border p-2">商品名称</th>
-              <th className="border p-2">变动数量</th>
-              <th className="border p-2">变动类型</th>
-              <th className="border p-2">变动原因</th>
-              <th className="border p-2">所属店铺</th>
-              <th className="border p-2">变动时间</th>
-            </tr>
-          </thead>
-          <tbody>
-            {inventoryLogs.map(log => (
-              <tr key={log.id}>
-                <td className="border p-2">{log.productName}</td>
-                <td className={`border p-2 ${log.type === 'in' ? 'text-green-500' : 'text-red-500'}`}>
-                  {log.type === 'in' ? '+' : '-'}{log.quantity}
-                </td>
-                <td className="border p-2">{log.type === 'in' ? '入库' : '出库'}</td>
-                <td className="border p-2">{log.reason}</td>
-                <td className="border p-2">{log.shopId}</td>
-                <td className="border p-2">{log.createdAt}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Card>
+        <h2 className="text-xl font-bold mb-4">库存变动记录</h2>
+        <Table 
+          columns={logColumns} 
+          dataSource={inventoryLogs} 
+          rowKey="id" 
+          pagination={{ pageSize: 10 }}
+        />
+      </Card>
 
       {/* 调整库存模态框 */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4">调整库存</h2>
-            <form>
-              <div className="mb-4">
-                <label className="block mb-2">商品</label>
-                <select 
-                  className="w-full p-2 border" 
-                  name="productId" 
-                  value={formData.productId || ''} 
-                  onChange={handleInputChange}
-                >
-                  <option value="">请选择商品</option>
-                  {inventory.map(item => (
-                    <option key={item.id} value={item.productId}>{item.productName}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">变动类型</label>
-                <select 
-                  className="w-full p-2 border" 
-                  name="type" 
-                  value={formData.type || ''} 
-                  onChange={handleInputChange}
-                >
-                  <option value="">请选择类型</option>
-                  <option value="in">入库</option>
-                  <option value="out">出库</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">变动数量</label>
-                <input 
-                  type="number" 
-                  className="w-full p-2 border" 
-                  name="quantity" 
-                  value={formData.quantity || ''} 
-                  onChange={handleInputChange} 
-                  min="1"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">变动原因</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="reason" 
-                  value={formData.reason || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">所属店铺</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="shopId" 
-                  value={formData.shopId || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="flex justify-end">
-                <button type="button" className="mr-2 px-4 py-2 border" onClick={handleCancel}>取消</button>
-                <button type="button" className="px-4 py-2 bg-blue-500 text-white" onClick={handleOk}>确定</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <Modal
+        title="调整库存"
+        open={isModalOpen}
+        onCancel={handleCancel}
+        onOk={handleOk}
+        width={500}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+        >
+          <Form.Item
+            name="productId"
+            label="商品"
+            rules={[{ required: true, message: '请选择商品' }]}
+          >
+            <Select placeholder="请选择商品">
+              {inventory.map(item => (
+                <Select.Option key={item.productId} value={item.productId}>{item.productName}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="type"
+            label="变动类型"
+            rules={[{ required: true, message: '请选择变动类型' }]}
+          >
+            <Select placeholder="请选择变动类型">
+              <Select.Option value="in">入库</Select.Option>
+              <Select.Option value="out">出库</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="quantity"
+            label="变动数量"
+            rules={[{ required: true, message: '请输入变动数量' }]}
+          >
+            <Input type="number" placeholder="请输入变动数量" min="1" />
+          </Form.Item>
+          <Form.Item
+            name="reason"
+            label="变动原因"
+            rules={[{ required: true, message: '请输入变动原因' }]}
+          >
+            <Input placeholder="请输入变动原因" />
+          </Form.Item>
+          <Form.Item
+            name="shopId"
+            label="所属店铺"
+            rules={[{ required: true, message: '请输入所属店铺' }]}
+          >
+            <Input placeholder="请输入所属店铺" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
@@ -645,10 +596,10 @@ const SalesPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedOrder, setSelectedOrder] = React.useState<any>(null);
   const [isDetailOpen, setIsDetailOpen] = React.useState(false);
-  const [formData, setFormData] = React.useState<any>({ items: [{ productId: '', productName: '', quantity: 1, price: 0 }] });
+  const [form] = Form.useForm();
 
   const showModal = () => {
-    setFormData({ shopId: '', items: [{ productId: '', productName: '', quantity: 1, price: 0 }] });
+    form.setFieldsValue({ shopId: '', items: [{ productId: '', productName: '', quantity: 1, price: 0 }] });
     setIsModalOpen(true);
   };
 
@@ -660,208 +611,178 @@ const SalesPage: React.FC = () => {
   const handleCancel = () => {
     setIsModalOpen(false);
     setIsDetailOpen(false);
+    form.resetFields();
   };
 
   const handleOk = () => {
-    // 计算总金额
-    const totalAmount = formData.items.reduce((sum: number, item: any) => sum + item.quantity * item.price, 0);
-    
-    // 创建新订单
-    const newOrder = {
-      id: String(orders.length + 1),
-      shopId: formData.shopId,
-      totalAmount,
-      status: 'pending',
-      createdAt: new Date().toLocaleString('zh-CN'),
-      items: formData.items,
-    };
-    
-    setOrders([...orders, newOrder]);
-    setIsModalOpen(false);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, index?: number) => {
-    const { name, value } = e.target;
-    if (index !== undefined) {
-      // 处理商品项的变化
-      setFormData(prev => {
-        const newItems = [...prev.items];
-        newItems[index] = {
-          ...newItems[index],
-          [name]: name === 'quantity' || name === 'price' ? Number(value) : value
-        };
-        return { ...prev, items: newItems };
-      });
-    } else {
-      // 处理订单级别的变化
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const addItem = () => {
-    setFormData(prev => ({
-      ...prev,
-      items: [...prev.items, { productId: '', productName: '', quantity: 1, price: 0 }]
-    }));
-  };
-
-  const removeItem = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index)
-    }));
+    form.validateFields().then(values => {
+      // 计算总金额
+      const totalAmount = values.items.reduce((sum: number, item: any) => sum + item.quantity * item.price, 0);
+      
+      // 创建新订单
+      const newOrder = {
+        id: String(orders.length + 1),
+        shopId: values.shopId,
+        totalAmount,
+        status: 'pending',
+        createdAt: new Date().toLocaleString('zh-CN'),
+        items: values.items,
+      };
+      
+      setOrders([...orders, newOrder]);
+      message.success('订单添加成功');
+      setIsModalOpen(false);
+      form.resetFields();
+    });
   };
 
   const updateStatus = (id: string, status: string) => {
     setOrders(orders.map(order => order.id === id ? { ...order, status } : order));
+    message.success('订单状态更新成功');
   };
+
+  const columns = [
+    { title: '订单号', dataIndex: 'id', key: 'id' },
+    { title: '店铺', dataIndex: 'shopId', key: 'shopId' },
+    { title: '总金额', dataIndex: 'totalAmount', key: 'totalAmount', render: (amount: number) => `¥${amount}` },
+    { 
+      title: '状态', 
+      key: 'status', 
+      render: (_: any, record: any) => (
+        <Tag color={
+          record.status === 'completed' ? 'green' :
+          record.status === 'pending' ? 'yellow' :
+          'red'
+        }>
+          {record.status === 'completed' ? '已完成' :
+           record.status === 'pending' ? '待处理' :
+           '已取消'}
+        </Tag>
+      ) 
+    },
+    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
+    { 
+      title: '操作', 
+      key: 'action', 
+      render: (_: any, record: any) => (
+        <Space size="middle">
+          <Button type="primary" icon={<EyeOutlined />} onClick={() => showDetail(record)}>详情</Button>
+          {record.status === 'pending' && (
+            <>
+              <Button type="success" onClick={() => updateStatus(record.id, 'completed')}>完成</Button>
+              <Button danger onClick={() => updateStatus(record.id, 'cancelled')}>取消</Button>
+            </>
+          )}
+        </Space>
+      ) 
+    },
+  ];
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">销售管理</h1>
-        <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={showModal}>添加订单</button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={showModal}>添加订单</Button>
       </div>
 
       {/* 销售订单列表 */}
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">订单号</th>
-            <th className="border p-2">店铺</th>
-            <th className="border p-2">总金额</th>
-            <th className="border p-2">状态</th>
-            <th className="border p-2">创建时间</th>
-            <th className="border p-2">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map(order => (
-            <tr key={order.id}>
-              <td className="border p-2">{order.id}</td>
-              <td className="border p-2">{order.shopId}</td>
-              <td className="border p-2">¥{order.totalAmount}</td>
-              <td className="border p-2">
-                <span className={
-                  order.status === 'completed' ? 'text-green-500' :
-                  order.status === 'pending' ? 'text-yellow-500' :
-                  'text-red-500'
-                }>
-                  {order.status === 'completed' ? '已完成' :
-                   order.status === 'pending' ? '待处理' :
-                   '已取消'}
-                </span>
-              </td>
-              <td className="border p-2">{order.createdAt}</td>
-              <td className="border p-2">
-                <button className="mr-2 text-blue-500" onClick={() => showDetail(order)}>详情</button>
-                {order.status === 'pending' && (
-                  <>
-                    <button className="mr-2 text-green-500" onClick={() => updateStatus(order.id, 'completed')}>完成</button>
-                    <button className="text-red-500" onClick={() => updateStatus(order.id, 'cancelled')}>取消</button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Table 
+        columns={columns} 
+        dataSource={orders} 
+        rowKey="id" 
+        pagination={{ pageSize: 10 }}
+        style={{ marginBottom: 20 }}
+      />
 
       {/* 添加订单模态框 */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4">添加订单</h2>
-            <form>
-              <div className="mb-4">
-                <label className="block mb-2">店铺</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="shopId" 
-                  value={formData.shopId || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label className="block mb-2">商品列表</label>
-                {formData.items.map((item: any, index: number) => (
-                  <div key={index} className="mb-2 p-2 border rounded">
-                    <div className="grid grid-cols-2 gap-2 mb-2">
-                      <div>
-                        <label className="block mb-1">商品名称</label>
-                        <input 
-                          type="text" 
-                          className="w-full p-1 border" 
-                          name="productName" 
-                          value={item.productName || ''} 
-                          onChange={(e) => handleInputChange(e, index)} 
-                        />
+      <Modal
+        title="添加订单"
+        open={isModalOpen}
+        onCancel={handleCancel}
+        onOk={handleOk}
+        width={700}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+        >
+          <Form.Item
+            name="shopId"
+            label="店铺"
+            rules={[{ required: true, message: '请输入店铺' }]}
+          >
+            <Input placeholder="请输入店铺" />
+          </Form.Item>
+          
+          <Form.Item
+            name="items"
+            label="商品列表"
+            rules={[{ required: true, message: '请添加至少一个商品' }]}
+          >
+            <Form.List name="items">
+              {(fields, { add, remove }) => (
+                <div>
+                  {fields.map((field, index) => (
+                    <Card key={field.key} className="mb-3">
+                      <Form.Item
+                        {...field}
+                        name={[field.name, 'productName']}
+                        label="商品名称"
+                        rules={[{ required: true, message: '请输入商品名称' }]}
+                      >
+                        <Input placeholder="请输入商品名称" />
+                      </Form.Item>
+                      <Form.Item
+                        {...field}
+                        name={[field.name, 'productId']}
+                        label="商品ID"
+                        rules={[{ required: true, message: '请输入商品ID' }]}
+                      >
+                        <Input placeholder="请输入商品ID" />
+                      </Form.Item>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Form.Item
+                          {...field}
+                          name={[field.name, 'quantity']}
+                          label="数量"
+                          rules={[{ required: true, message: '请输入数量' }]}
+                        >
+                          <Input type="number" placeholder="请输入数量" min="1" />
+                        </Form.Item>
+                        <Form.Item
+                          {...field}
+                          name={[field.name, 'price']}
+                          label="单价"
+                          rules={[{ required: true, message: '请输入单价' }]}
+                        >
+                          <Input type="number" placeholder="请输入单价" min="0" />
+                        </Form.Item>
                       </div>
-                      <div>
-                        <label className="block mb-1">商品ID</label>
-                        <input 
-                          type="text" 
-                          className="w-full p-1 border" 
-                          name="productId" 
-                          value={item.productId || ''} 
-                          onChange={(e) => handleInputChange(e, index)} 
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block mb-1">数量</label>
-                        <input 
-                          type="number" 
-                          className="w-full p-1 border" 
-                          name="quantity" 
-                          value={item.quantity || ''} 
-                          onChange={(e) => handleInputChange(e, index)} 
-                          min="1"
-                        />
-                      </div>
-                      <div>
-                        <label className="block mb-1">单价</label>
-                        <input 
-                          type="number" 
-                          className="w-full p-1 border" 
-                          name="price" 
-                          value={item.price || ''} 
-                          onChange={(e) => handleInputChange(e, index)} 
-                          min="0"
-                        />
-                      </div>
-                    </div>
-                    <button 
-                      type="button" 
-                      className="mt-2 text-red-500 text-sm" 
-                      onClick={() => removeItem(index)}
-                    >
-                      删除商品
-                    </button>
-                  </div>
-                ))}
-                <button type="button" className="mt-2 text-blue-500" onClick={addItem}>
-                  添加商品
-                </button>
-              </div>
-              
-              <div className="flex justify-end">
-                <button type="button" className="mr-2 px-4 py-2 border" onClick={handleCancel}>取消</button>
-                <button type="button" className="px-4 py-2 bg-blue-500 text-white" onClick={handleOk}>确定</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                      <Button danger onClick={() => remove(field.name)}>删除商品</Button>
+                    </Card>
+                  ))}
+                  <Button type="dashed" onClick={() => add({ productId: '', productName: '', quantity: 1, price: 0 })}>
+                    添加商品
+                  </Button>
+                </div>
+              )}
+            </Form.List>
+          </Form.Item>
+        </Form>
+      </Modal>
 
       {/* 订单详情模态框 */}
-      {isDetailOpen && selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4">订单详情</h2>
+      <Modal
+        title="订单详情"
+        open={isDetailOpen}
+        onCancel={handleCancel}
+        footer={[
+          <Button key="close" onClick={handleCancel}>关闭</Button>
+        ]}
+        width={600}
+      >
+        {selectedOrder && (
+          <div>
             <div className="mb-4">
               <p><strong>订单号:</strong> {selectedOrder.id}</p>
               <p><strong>店铺:</strong> {selectedOrder.shopId}</p>
@@ -871,33 +792,21 @@ const SalesPage: React.FC = () => {
             </div>
             <div>
               <h3 className="font-bold mb-2">商品列表</h3>
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border p-1">商品名称</th>
-                    <th className="border p-1">数量</th>
-                    <th className="border p-1">单价</th>
-                    <th className="border p-1">小计</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedOrder.items.map((item: any, index: number) => (
-                    <tr key={index}>
-                      <td className="border p-1">{item.productName}</td>
-                      <td className="border p-1">{item.quantity}</td>
-                      <td className="border p-1">¥{item.price}</td>
-                      <td className="border p-1">¥{item.quantity * item.price}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button type="button" className="px-4 py-2 border" onClick={handleCancel}>关闭</button>
+              <Table 
+                columns={[
+                  { title: '商品名称', dataIndex: 'productName', key: 'productName' },
+                  { title: '数量', dataIndex: 'quantity', key: 'quantity' },
+                  { title: '单价', dataIndex: 'price', key: 'price', render: (price: number) => `¥${price}` },
+                  { title: '小计', key: 'subtotal', render: (_: any, record: any) => `¥${record.quantity * record.price}` }
+                ]} 
+                dataSource={selectedOrder.items} 
+                rowKey={(record, index) => index}
+                pagination={false}
+              />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 };
@@ -911,7 +820,7 @@ const FinancialPage: React.FC = () => {
     { id: '5', shopId: '3', amount: 500, type: 'expense', category: '租金', description: '店铺租金', createdAt: '2026-04-15 08:00:00' },
   ]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [formData, setFormData] = React.useState<any>({});
+  const [form] = Form.useForm();
 
   // 计算收支统计
   const incomeTotal = financialRecords.filter(record => record.type === 'income').reduce((sum, record) => sum + record.amount, 0);
@@ -919,158 +828,169 @@ const FinancialPage: React.FC = () => {
   const netProfit = incomeTotal - expenseTotal;
 
   const showModal = () => {
-    setFormData({});
+    form.resetFields();
     setIsModalOpen(true);
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    form.resetFields();
   };
 
   const handleOk = () => {
-    const newRecord = {
-      id: String(financialRecords.length + 1),
-      ...formData,
-      createdAt: new Date().toLocaleString('zh-CN'),
-    };
-    setFinancialRecords([...financialRecords, newRecord]);
-    setIsModalOpen(false);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'amount' ? Number(value) : value }));
+    form.validateFields().then(values => {
+      const newRecord = {
+        id: String(financialRecords.length + 1),
+        ...values,
+        createdAt: new Date().toLocaleString('zh-CN'),
+      };
+      setFinancialRecords([...financialRecords, newRecord]);
+      message.success('财务记录添加成功');
+      setIsModalOpen(false);
+      form.resetFields();
+    });
   };
 
   const handleDelete = (id: string) => {
     setFinancialRecords(financialRecords.filter(record => record.id !== id));
+    message.success('财务记录删除成功');
   };
+
+  const columns = [
+    { title: '记录ID', dataIndex: 'id', key: 'id' },
+    { title: '店铺', dataIndex: 'shopId', key: 'shopId' },
+    { 
+      title: '金额', 
+      key: 'amount', 
+      render: (_: any, record: any) => (
+        <span className={record.type === 'income' ? 'text-green-500' : 'text-red-500'}>
+          {record.type === 'income' ? '+' : '-'}{record.amount}
+        </span>
+      ) 
+    },
+    { 
+      title: '类型', 
+      key: 'type', 
+      render: (_: any, record: any) => (
+        <Tag color={record.type === 'income' ? 'green' : 'red'}>
+          {record.type === 'income' ? '收入' : '支出'}
+        </Tag>
+      ) 
+    },
+    { title: '分类', dataIndex: 'category', key: 'category' },
+    { title: '描述', dataIndex: 'description', key: 'description' },
+    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
+    { 
+      title: '操作', 
+      key: 'action', 
+      render: (_: any, record: any) => (
+        <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
+      ) 
+    },
+  ];
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">财务管理</h1>
-        <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={showModal}>添加记录</button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={showModal}>添加记录</Button>
       </div>
 
       {/* 收支统计 */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-green-100 p-4 rounded-lg">
-          <h3 className="font-bold">总收入</h3>
-          <p className="text-2xl">¥{incomeTotal}</p>
-        </div>
-        <div className="bg-red-100 p-4 rounded-lg">
-          <h3 className="font-bold">总支出</h3>
-          <p className="text-2xl">¥{expenseTotal}</p>
-        </div>
-        <div className="bg-blue-100 p-4 rounded-lg">
-          <h3 className="font-bold">净利润</h3>
-          <p className="text-2xl">¥{netProfit}</p>
-        </div>
-      </div>
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={24} sm={8}>
+          <Card>
+            <Statistic
+              title="总收入"
+              value={incomeTotal}
+              prefix="¥"
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card>
+            <Statistic
+              title="总支出"
+              value={expenseTotal}
+              prefix="¥"
+              valueStyle={{ color: '#f5222d' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card>
+            <Statistic
+              title="净利润"
+              value={netProfit}
+              prefix="¥"
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+      </Row>
 
       {/* 财务记录列表 */}
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">记录ID</th>
-            <th className="border p-2">店铺</th>
-            <th className="border p-2">金额</th>
-            <th className="border p-2">类型</th>
-            <th className="border p-2">分类</th>
-            <th className="border p-2">描述</th>
-            <th className="border p-2">创建时间</th>
-            <th className="border p-2">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {financialRecords.map(record => (
-            <tr key={record.id}>
-              <td className="border p-2">{record.id}</td>
-              <td className="border p-2">{record.shopId}</td>
-              <td className={`border p-2 ${record.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
-                {record.type === 'income' ? '+' : '-'}{record.amount}
-              </td>
-              <td className="border p-2">{record.type === 'income' ? '收入' : '支出'}</td>
-              <td className="border p-2">{record.category}</td>
-              <td className="border p-2">{record.description}</td>
-              <td className="border p-2">{record.createdAt}</td>
-              <td className="border p-2">
-                <button className="text-red-500" onClick={() => handleDelete(record.id)}>删除</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Table 
+        columns={columns} 
+        dataSource={financialRecords} 
+        rowKey="id" 
+        pagination={{ pageSize: 10 }}
+        style={{ marginBottom: 20 }}
+      />
 
       {/* 添加财务记录模态框 */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4">添加财务记录</h2>
-            <form>
-              <div className="mb-4">
-                <label className="block mb-2">店铺</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="shopId" 
-                  value={formData.shopId || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">金额</label>
-                <input 
-                  type="number" 
-                  className="w-full p-2 border" 
-                  name="amount" 
-                  value={formData.amount || ''} 
-                  onChange={handleInputChange} 
-                  min="0"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">类型</label>
-                <select 
-                  className="w-full p-2 border" 
-                  name="type" 
-                  value={formData.type || ''} 
-                  onChange={handleInputChange}
-                >
-                  <option value="">请选择类型</option>
-                  <option value="income">收入</option>
-                  <option value="expense">支出</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">分类</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="category" 
-                  value={formData.category || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">描述</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="description" 
-                  value={formData.description || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="flex justify-end">
-                <button type="button" className="mr-2 px-4 py-2 border" onClick={handleCancel}>取消</button>
-                <button type="button" className="px-4 py-2 bg-blue-500 text-white" onClick={handleOk}>确定</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <Modal
+        title="添加财务记录"
+        open={isModalOpen}
+        onCancel={handleCancel}
+        onOk={handleOk}
+        width={500}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+        >
+          <Form.Item
+            name="shopId"
+            label="店铺"
+            rules={[{ required: true, message: '请输入店铺' }]}
+          >
+            <Input placeholder="请输入店铺" />
+          </Form.Item>
+          <Form.Item
+            name="amount"
+            label="金额"
+            rules={[{ required: true, message: '请输入金额' }]}
+          >
+            <Input type="number" placeholder="请输入金额" min="0" />
+          </Form.Item>
+          <Form.Item
+            name="type"
+            label="类型"
+            rules={[{ required: true, message: '请选择类型' }]}
+          >
+            <Select placeholder="请选择类型">
+              <Select.Option value="income">收入</Select.Option>
+              <Select.Option value="expense">支出</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="category"
+            label="分类"
+            rules={[{ required: true, message: '请输入分类' }]}
+          >
+            <Input placeholder="请输入分类" />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="描述"
+            rules={[{ required: true, message: '请输入描述' }]}
+          >
+            <Input placeholder="请输入描述" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
@@ -1268,58 +1188,78 @@ const ReportPage: React.FC = () => {
       <h1 className="text-2xl font-bold mb-6">报表分析</h1>
 
       {/* 销售趋势 */}
-      <div className="mb-8">
+      <Card className="mb-6">
         <h2 className="text-xl font-bold mb-4">销售趋势</h2>
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="p-4">
           <canvas id="salesChart" height="300"></canvas>
         </div>
-      </div>
+      </Card>
 
       {/* 库存状况 */}
-      <div className="mb-8">
+      <Card className="mb-6">
         <h2 className="text-xl font-bold mb-4">库存状况</h2>
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="p-4">
           <canvas id="inventoryChart" height="300"></canvas>
         </div>
-      </div>
+      </Card>
 
       {/* 财务分析 */}
-      <div className="mb-8">
+      <Card className="mb-6">
         <h2 className="text-xl font-bold mb-4">财务分析</h2>
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="p-4">
           <canvas id="financialChart" height="300"></canvas>
         </div>
-      </div>
+      </Card>
 
       {/* 店铺销售对比 */}
-      <div className="mb-8">
+      <Card className="mb-6">
         <h2 className="text-xl font-bold mb-4">店铺销售对比</h2>
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="p-4">
           <canvas id="shopSalesChart" height="300"></canvas>
         </div>
-      </div>
+      </Card>
 
       {/* 统计卡片 */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-blue-100 p-4 rounded-lg">
-          <h3 className="font-bold">总销售额</h3>
-          <p className="text-2xl">¥65,000</p>
-        </div>
-        <div className="bg-green-100 p-4 rounded-lg">
-          <h3 className="font-bold">总利润</h3>
-          <p className="text-2xl">¥22,000</p>
-        </div>
-        <div className="bg-yellow-100 p-4 rounded-lg">
-          <h3 className="font-bold">总订单数</h3>
-          <p className="text-2xl">150</p>
-        </div>
-        <div className="bg-red-100 p-4 rounded-lg">
-          <h3 className="font-bold">库存总量</h3>
-          <p className="text-2xl">200</p>
-        </div>
-      </div>
-
-      {/* 图表初始化将在组件挂载后通过 useEffect 实现 */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="总销售额"
+              value={65000}
+              prefix="¥"
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="总利润"
+              value={22000}
+              prefix="¥"
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="总订单数"
+              value={100}
+              valueStyle={{ color: '#faad14' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="商品种类"
+              value={50}
+              valueStyle={{ color: '#f5222d' }}
+            />
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 };
@@ -1334,136 +1274,126 @@ const UserPage: React.FC = () => {
   ]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<any>(null);
-  const [formData, setFormData] = React.useState<any>({});
+  const [form] = Form.useForm();
 
   const showModal = (user?: any) => {
     if (user) {
       setEditingUser(user);
-      setFormData(user);
+      form.setFieldsValue(user);
     } else {
       setEditingUser(null);
-      setFormData({});
+      form.resetFields();
     }
     setIsModalOpen(true);
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    form.resetFields();
   };
 
   const handleOk = () => {
-    if (editingUser) {
-      setUsers(users.map(user => user.id === editingUser.id ? { ...user, ...formData } : user));
-    } else {
-      setUsers([...users, { id: String(users.length + 1), ...formData, createdAt: new Date().toLocaleString('zh-CN') }]);
-    }
-    setIsModalOpen(false);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    form.validateFields().then(values => {
+      if (editingUser) {
+        setUsers(users.map(user => user.id === editingUser.id ? { ...user, ...values } : user));
+        message.success('用户更新成功');
+      } else {
+        setUsers([...users, { id: String(users.length + 1), ...values, createdAt: new Date().toLocaleString('zh-CN') }]);
+        message.success('用户添加成功');
+      }
+      setIsModalOpen(false);
+      form.resetFields();
+    });
   };
 
   const handleDelete = (id: string) => {
     setUsers(users.filter(user => user.id !== id));
+    message.success('用户删除成功');
   };
+
+  const columns = [
+    { title: '用户ID', dataIndex: 'id', key: 'id' },
+    { title: '用户名', dataIndex: 'username', key: 'username' },
+    { 
+      title: '角色', 
+      key: 'role', 
+      render: (_: any, record: any) => (
+        <Tag color={
+          record.role === 'admin' ? 'purple' :
+          record.role === 'manager' ? 'blue' :
+          'green'
+        }>
+          {record.role === 'admin' ? '管理员' : record.role === 'manager' ? '店长' : '员工'}
+        </Tag>
+      ) 
+    },
+    { title: '所属店铺', dataIndex: 'shopId', key: 'shopId', render: (shopId: any) => shopId || '全部店铺' },
+    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
+    { 
+      title: '操作', 
+      key: 'action', 
+      render: (_: any, record: any) => (
+        <Space size="middle">
+          <Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>编辑</Button>
+          <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
+        </Space>
+      ) 
+    },
+  ];
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">用户管理</h1>
-        <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => showModal()}>添加用户</button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>添加用户</Button>
       </div>
 
-      {/* 用户列表 */}
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">用户ID</th>
-            <th className="border p-2">用户名</th>
-            <th className="border p-2">角色</th>
-            <th className="border p-2">所属店铺</th>
-            <th className="border p-2">创建时间</th>
-            <th className="border p-2">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map(user => (
-            <tr key={user.id}>
-              <td className="border p-2">{user.id}</td>
-              <td className="border p-2">{user.username}</td>
-              <td className="border p-2">
-                <span className={
-                  user.role === 'admin' ? 'text-red-500' :
-                  user.role === 'manager' ? 'text-blue-500' :
-                  'text-green-500'
-                }>
-                  {user.role === 'admin' ? '管理员' :
-                   user.role === 'manager' ? '店长' :
-                   '员工'}
-                </span>
-              </td>
-              <td className="border p-2">{user.shopId || '全部店铺'}</td>
-              <td className="border p-2">{user.createdAt}</td>
-              <td className="border p-2">
-                <button className="mr-2 text-blue-500" onClick={() => showModal(user)}>编辑</button>
-                <button className="text-red-500" onClick={() => handleDelete(user.id)}>删除</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Table 
+        columns={columns} 
+        dataSource={users} 
+        rowKey="id" 
+        pagination={{ pageSize: 10 }}
+        style={{ marginBottom: 20 }}
+      />
 
-      {/* 添加/编辑用户模态框 */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4">{editingUser ? '编辑用户' : '添加用户'}</h2>
-            <form>
-              <div className="mb-4">
-                <label className="block mb-2">用户名</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="username" 
-                  value={formData.username || ''} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">角色</label>
-                <select 
-                  className="w-full p-2 border" 
-                  name="role" 
-                  value={formData.role || ''} 
-                  onChange={handleInputChange}
-                >
-                  <option value="">请选择角色</option>
-                  <option value="admin">管理员</option>
-                  <option value="manager">店长</option>
-                  <option value="staff">员工</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">所属店铺</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border" 
-                  name="shopId" 
-                  value={formData.shopId || ''} 
-                  onChange={handleInputChange} 
-                  placeholder="留空表示全部店铺"
-                />
-              </div>
-              <div className="flex justify-end">
-                <button type="button" className="mr-2 px-4 py-2 border" onClick={handleCancel}>取消</button>
-                <button type="button" className="px-4 py-2 bg-blue-500 text-white" onClick={handleOk}>确定</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* 模态框 */}
+      <Modal
+        title={editingUser ? '编辑用户' : '添加用户'}
+        open={isModalOpen}
+        onCancel={handleCancel}
+        onOk={handleOk}
+        width={500}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+        >
+          <Form.Item
+            name="username"
+            label="用户名"
+            rules={[{ required: true, message: '请输入用户名' }]}
+          >
+            <Input placeholder="请输入用户名" />
+          </Form.Item>
+          <Form.Item
+            name="role"
+            label="角色"
+            rules={[{ required: true, message: '请选择角色' }]}
+          >
+            <Select placeholder="请选择角色">
+              <Select.Option value="admin">管理员</Select.Option>
+              <Select.Option value="manager">店长</Select.Option>
+              <Select.Option value="staff">员工</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="shopId"
+            label="所属店铺"
+          >
+            <Input placeholder="留空表示全部店铺" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
