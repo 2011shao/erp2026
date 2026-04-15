@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { Layout, Menu, Button, Table, Modal, Form, Input, Select, Card, Statistic, Row, Col, Tag, Space, message, Breadcrumb, ConfigProvider, theme, Dropdown, Checkbox, Upload, DatePicker } from 'antd';
+import { Layout, Menu, Button, Table, Modal, Form, Input, Select, Card, Statistic, Row, Col, Tag, Space, message, Breadcrumb, ConfigProvider, theme, Dropdown, Checkbox, Upload, DatePicker, Avatar } from 'antd';
 import moment from 'moment';
 import { Link, Routes, Route, useLocation } from 'react-router-dom';
-import { ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarOutlined, BarChartOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, SearchOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
+import { ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarOutlined, BarChartOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, SearchOutlined, DownloadOutlined, UploadOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 import { useAuthStore, filterMenuByPermission } from './store/authStore';
 import { menuConfig } from './config/menu';
@@ -92,27 +92,216 @@ const App: React.FC = () => {
     return items;
   };
 
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [hotSearches, setHotSearches] = useState<string[]>(['店铺', '商品', '库存', '销售', '财务']);
+
   // 全局搜索处理
   const handleSearch = useCallback(
-    debounce((value: string) => {
-      message.info(`搜索: ${value}`);
-      // 这里可以实现全局搜索逻辑
-      LogService.logUserAction('search', 'global', undefined, { keyword: value });
+    debounce(async (value: string) => {
+      if (!value.trim()) {
+        setSearchResults([]);
+        return;
+      }
+      
+      setSearchLoading(true);
+      try {
+        // 模拟搜索API调用
+        // 实际项目中应该调用后端API进行跨模块搜索
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 模拟搜索结果
+        const results = [
+          { id: 1, type: '店铺', title: '北京旗舰店', path: '/shops', icon: <ShopOutlined /> },
+          { id: 2, type: '店铺', title: '上海分店', path: '/shops', icon: <ShopOutlined /> },
+          { id: 3, type: '商品', title: 'iPhone 15', path: '/products', icon: <ProductOutlined /> },
+          { id: 4, type: '商品', title: 'MacBook Pro', path: '/products', icon: <ProductOutlined /> },
+          { id: 5, type: '库存', title: '库存管理', path: '/inventory', icon: <StockOutlined /> },
+        ].filter(item => 
+          item.title.toLowerCase().includes(value.toLowerCase()) ||
+          item.type.toLowerCase().includes(value.toLowerCase())
+        );
+        
+        setSearchResults(results);
+        
+        // 更新搜索历史
+        if (value.trim()) {
+          setSearchHistory(prev => {
+            const newHistory = [value, ...prev.filter(item => item !== value)].slice(0, 5);
+            localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+            return newHistory;
+          });
+        }
+        
+        LogService.logUserAction('search', 'global', undefined, { keyword: value, results: results.length });
+      } catch (error) {
+        console.error('Search error:', error);
+        message.error('搜索失败，请重试');
+      } finally {
+        setSearchLoading(false);
+      }
     }, 300),
     []
   );
+
+  // 加载搜索历史
+  React.useEffect(() => {
+    const history = localStorage.getItem('searchHistory');
+    if (history) {
+      try {
+        setSearchHistory(JSON.parse(history));
+      } catch (error) {
+        console.error('Failed to parse search history:', error);
+      }
+    }
+  }, []);
+
+  // 清除搜索历史
+  const clearSearchHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem('searchHistory');
+  };
+
+  // 处理搜索框点击
+  const handleSearchClick = () => {
+    setSearchVisible(true);
+  };
+
+  // 处理搜索框关闭
+  const handleSearchClose = () => {
+    setSearchVisible(false);
+    setSearchValue('');
+    setSearchResults([]);
+  };
+
+  // 处理搜索项点击
+  const handleSearchItemClick = (item: any) => {
+    setSearchValue(item.title);
+    setSearchVisible(false);
+    // 跳转到对应页面
+    window.location.href = item.path;
+  };
+
+  // 点击外部关闭搜索面板
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const searchContainer = document.querySelector('.search-container');
+      if (searchContainer && !searchContainer.contains(event.target as Node)) {
+        setSearchVisible(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <ConfigProvider
       theme={{
         token: {
           colorPrimary: '#1890ff',
+          colorPrimaryHover: '#40a9ff',
+          colorPrimaryActive: '#096dd9',
+          colorSuccess: '#52c41a',
+          colorWarning: '#faad14',
+          colorError: '#f5222d',
+          colorInfo: '#1890ff',
           colorBgLayout: '#f0f2f5',
+          colorBgContainer: '#ffffff',
+          colorBorder: '#e8e8e8',
+          colorText: '#333333',
+          colorTextSecondary: '#666666',
+          colorTextTertiary: '#999999',
+          borderRadius: 8,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.09)',
+          boxShadowHover: '0 4px 16px rgba(0, 0, 0, 0.15)',
+          fontSize: 14,
+          lineHeight: 1.5715,
+        },
+        components: {
+          Layout: {
+            headerBg: '#001529',
+            siderBg: '#001529',
+            bodyBg: '#f0f2f5',
+          },
+          Menu: {
+            bg: '#001529',
+            itemHoverBg: 'rgba(24, 144, 255, 0.1)',
+            itemSelectedBg: '#1890ff',
+            itemSelectedColor: '#ffffff',
+            itemColor: '#ffffff',
+            itemHoverColor: '#ffffff',
+          },
+          Card: {
+            borderRadius: 8,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.09)',
+            hoverShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
+            headerColor: '#333333',
+            bodyColor: '#333333',
+          },
+          Table: {
+            rowHoverBg: '#f5f5f5',
+            headerBg: '#fafafa',
+            headerColor: '#666666',
+            borderColor: '#e8e8e8',
+            borderRadius: 8,
+            rowColor: '#333333',
+          },
+          Button: {
+            borderRadius: 4,
+            colorPrimary: '#1890ff',
+            colorSuccess: '#52c41a',
+            colorWarning: '#faad14',
+            colorError: '#f5222d',
+          },
+          Input: {
+            borderRadius: 4,
+            borderColor: '#e8e8e8',
+            placeholderColor: '#999999',
+          },
+          Select: {
+            borderRadius: 4,
+            borderColor: '#e8e8e8',
+          },
+          Tag: {
+            borderRadius: 4,
+            colorSuccess: '#52c41a',
+            colorWarning: '#faad14',
+            colorError: '#f5222d',
+            colorInfo: '#1890ff',
+          },
+          Breadcrumb: {
+            itemColor: '#666666',
+            linkColor: '#1890ff',
+          },
+          Modal: {
+            borderRadius: 8,
+            headerColor: '#333333',
+            bodyColor: '#333333',
+          },
+          Form: {
+            labelColor: '#666666',
+          },
         },
       }}
     >
       <Layout style={{ minHeight: '100vh' }}>
-        <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#001529', padding: '0 24px' }}>
+        <Header style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          backgroundColor: '#001529', 
+          padding: '0 24px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+        }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <Button
               type="text"
@@ -120,48 +309,271 @@ const App: React.FC = () => {
               onClick={() => setCollapsed(!collapsed)}
               style={{ fontSize: '16px', width: 64, height: 64, color: 'white' }}
             />
-            <div style={{ color: 'white', fontSize: '18px', fontWeight: 'bold', marginLeft: 16, display: { xs: 'none', sm: 'block' } }}>多门店 ERP 系统</div>
-            <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', marginLeft: 16, display: { xs: 'block', sm: 'none' } }}>ERP</div>
+            <div style={{ 
+              color: 'white', 
+              fontSize: '18px', 
+              fontWeight: 'bold', 
+              marginLeft: 16, 
+              display: { xs: 'none', sm: 'block' },
+              whiteSpace: 'nowrap',
+            }}>多门店 ERP 系统</div>
+            <div style={{ 
+              color: 'white', 
+              fontSize: '16px', 
+              fontWeight: 'bold', 
+              marginLeft: 16, 
+              display: { xs: 'block', sm: 'none' }
+            }}>ERP</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             {isAuthenticated && (
               <>
-                <Search
-                  placeholder="搜索"
-                  allowClear
-                  enterButton={<SearchOutlined />}
-                  style={{ width: { xs: 150, sm: 200 }, marginRight: { xs: 0, sm: 16 } }}
-                  onSearch={handleSearch}
-                />
-                <span style={{ color: 'white', marginRight: { xs: 0, sm: 16 }, display: { xs: 'none', sm: 'inline' } }}>欢迎, {user?.username}</span>
-                  <Button onClick={() => {
-                    LogService.logUserAction('logout', 'auth', undefined, { username: user?.username });
-                    logout();
-                  }}>退出登录</Button>
+                <div style={{ 
+                  position: 'relative',
+                  display: { xs: 'none', sm: 'block' }
+                }} className="search-container">
+                  <Input.Search
+                    placeholder="全局搜索"
+                    allowClear
+                    enterButton={<SearchOutlined />}
+                    style={{ 
+                      width: 320,
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                    }}
+                    onSearch={handleSearch}
+                    onChange={(e) => {
+                      setSearchValue(e.target.value);
+                      setSearchVisible(true);
+                      handleSearch(e.target.value);
+                    }}
+                    onPressEnter={() => handleSearch(searchValue)}
+                    onClick={() => setSearchVisible(true)}
+                    onFocus={() => setSearchVisible(true)}
+                    inputStyle={{ color: 'white' }}
+                    placeholderStyle={{ color: 'rgba(255, 255, 255, 0.6)' }}
+                    value={searchValue}
+                  />
+                  {searchVisible && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      marginTop: 8,
+                      backgroundColor: 'white',
+                      borderRadius: 8,
+                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
+                      zIndex: 1000,
+                      maxHeight: 400,
+                      overflow: 'auto'
+                    }}>
+                      {searchLoading ? (
+                        <div style={{ padding: 16, textAlign: 'center' }}>
+                          <div className="loading" style={{ display: 'inline-block' }}>搜索中...</div>
+                        </div>
+                      ) : searchResults.length > 0 ? (
+                        searchResults.map(item => (
+                          <div
+                            key={item.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              padding: '12px 16px',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid #f0f0f0'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f5f5f5';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'white';
+                            }}
+                            onClick={() => handleSearchItemClick(item)}
+                          >
+                            <div style={{ marginRight: 12, color: '#1890ff' }}>
+                              {item.icon}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 500 }}>{item.title}</div>
+                              <div style={{ fontSize: 12, color: '#999' }}>{item.type}</div>
+                            </div>
+                          </div>
+                        ))
+                      ) : searchValue ? (
+                        <div style={{ padding: 16, textAlign: 'center', color: '#999' }}>
+                          没有找到相关结果
+                        </div>
+                      ) : (
+                        <div>
+                          {searchHistory.length > 0 && (
+                            <div style={{ padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
+                              <div style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>搜索历史</div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                {searchHistory.map((item, index) => (
+                                  <span
+                                    key={index}
+                                    style={{
+                                      padding: '4px 12px',
+                                      backgroundColor: '#f5f5f5',
+                                      borderRadius: 16,
+                                      fontSize: 12,
+                                      cursor: 'pointer'
+                                    }}
+                                    onClick={() => {
+                                      setSearchValue(item);
+                                      handleSearch(item);
+                                    }}
+                                  >
+                                    {item}
+                                  </span>
+                                ))}
+                                <span
+                                  style={{
+                                    padding: '4px 12px',
+                                    color: '#1890ff',
+                                    fontSize: 12,
+                                    cursor: 'pointer'
+                                  }}
+                                  onClick={clearSearchHistory}
+                                >
+                                  清除历史
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          <div style={{ padding: '8px 16px' }}>
+                            <div style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>热门搜索</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                              {hotSearches.map((item, index) => (
+                                <span
+                                  key={index}
+                                  style={{
+                                    padding: '4px 12px',
+                                    backgroundColor: '#f5f5f5',
+                                    borderRadius: 16,
+                                    fontSize: 12,
+                                    cursor: 'pointer'
+                                  }}
+                                  onClick={() => {
+                                    setSearchValue(item);
+                                    handleSearch(item);
+                                  }}
+                                >
+                                  {item}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  padding: '0 12px',
+                  borderRadius: 4,
+                  marginRight: 16,
+                  display: { xs: 'none', sm: 'flex' }
+                }}>
+                  <span style={{ color: 'white', marginRight: 8 }}>欢迎, {user?.username}</span>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>
+                    {user?.role || '员工'}
+                  </span>
+                </div>
+                <Dropdown
+                  menu={{
+                    items: [
+                      {
+                        key: 'profile',
+                        label: '个人资料',
+                      },
+                      {
+                        key: 'settings',
+                        label: '系统设置',
+                      },
+                      {
+                        key: 'logout',
+                        label: '退出登录',
+                        onClick: () => {
+                          LogService.logUserAction('logout', 'auth', undefined, { username: user?.username });
+                          logout();
+                        },
+                      },
+                    ],
+                  }}
+                >
+                  <Button type="text" style={{ color: 'white' }}>
+                    <Avatar size={32} style={{ backgroundColor: '#1890ff' }}>
+                      {user?.username?.charAt(0).toUpperCase()}
+                    </Avatar>
+                  </Button>
+                </Dropdown>
               </>
             )}
             {!isAuthenticated && (
-              <Button type="primary" onClick={() => setIsLoginModalOpen(true)}>登录</Button>
+              <Button type="primary" onClick={() => setIsLoginModalOpen(true)}>
+                登录
+              </Button>
             )}
           </div>
         </Header>
         <Layout>
           <Sider
-            width={200}
+            width={240}
             collapsedWidth={80}
             collapsed={collapsed}
             collapsible
-            breakpoint="lg"
+            breakpoint="md"
+            trigger={null}
             style={{
-              backgroundColor: 'white',
-              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.09)',
+              backgroundColor: '#001529',
+              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.1)',
+              position: 'sticky',
+              top: 64,
+              height: 'calc(100vh - 64px)',
+              zIndex: 99,
+              transition: 'all 0.3s ease',
             }}
           >
+            <div style={{ 
+              height: 64, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: collapsed ? 'center' : 'space-between',
+              color: 'white',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              padding: collapsed ? '0' : '0 20px',
+            }}>
+              <span style={{ display: collapsed ? 'none' : 'block' }}>功能导航</span>
+              <Button
+                type="text"
+                icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                onClick={() => setCollapsed(!collapsed)}
+                style={{ fontSize: '16px', color: 'white', display: 'flex' }}
+              />
+            </div>
             <Menu
               mode="inline"
-              style={{ height: '100%', borderRight: 0 }}
+              style={{ 
+                height: 'calc(100% - 64px)', 
+                borderRight: 0,
+                backgroundColor: '#001529',
+                color: 'white',
+              }}
               items={menuItems}
               selectedKeys={[location.pathname]}
+              theme="dark"
+              defaultOpenKeys={['shops', 'products', 'inventory', 'sales', 'financial', 'reports', 'users', 'settings']}
+              onSelect={(e) => {
+                // 记录菜单点击日志
+                LogService.logUserAction('menu_click', 'navigation', e.key, { path: e.key });
+              }}
             />
           </Sider>
           
@@ -173,8 +585,9 @@ const App: React.FC = () => {
             onOk={handleLogin}
             confirmLoading={isLoading}
             width={{ xs: '90%', sm: 500 }}
+            centered
           >
-            {error && <div className="text-red-500 mb-4">{error}</div>}
+            {error && <div className="text-red-500 mb-4 text-center">{error}</div>}
             <Form
               form={form}
               layout="vertical"
@@ -184,21 +597,62 @@ const App: React.FC = () => {
                 label="用户名"
                 rules={[{ required: true, message: '请输入用户名' }]}
               >
-                <Input placeholder="请输入用户名" />
+                <Input 
+                  placeholder="请输入用户名" 
+                  size="large"
+                  prefix={<UserOutlined />}
+                />
               </Form.Item>
               <Form.Item
                 name="password"
                 label="密码"
                 rules={[{ required: true, message: '请输入密码' }]}
               >
-                <Input.Password placeholder="请输入密码" />
+                <Input.Password 
+                  placeholder="请输入密码" 
+                  size="large"
+                  prefix={<LockOutlined />}
+                />
               </Form.Item>
             </Form>
           </Modal>
-          <Layout style={{ padding: { xs: '12px', sm: '24px' } }}>
-            <Content style={{ backgroundColor: 'white', padding: { xs: '16px', sm: '24px' }, minHeight: 280, borderRadius: 8, boxShadow: '0 2px 8px rgba(0, 0, 0, 0.09)' }}>
+          <Layout style={{ 
+            padding: { xs: '8px', sm: '16px', md: '24px' },
+            flex: 1,
+            overflow: 'auto',
+          }}>
+            <Content style={{ 
+              backgroundColor: 'white', 
+              padding: { xs: '12px', sm: '16px', md: '24px' }, 
+              minHeight: 280, 
+              borderRadius: 8, 
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.09)',
+              marginBottom: { xs: '12px', sm: '24px' },
+            }}>
               {/* 面包屑导航 */}
-              <Breadcrumb items={getBreadcrumbItems()} style={{ marginBottom: 24, display: { xs: 'none', sm: 'block' } }} />
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                marginBottom: 24,
+              }}>
+                <Breadcrumb 
+                  items={getBreadcrumbItems()} 
+                  style={{ 
+                    display: { xs: 'none', sm: 'flex' },
+                    fontSize: '14px',
+                  }} 
+                />
+                <div style={{ display: { xs: 'block', sm: 'none' } }}>
+                  <Input.Search
+                    placeholder="搜索"
+                    allowClear
+                    enterButton
+                    style={{ width: 150 }}
+                    onSearch={handleSearch}
+                  />
+                </div>
+              </div>
               
               <Routes>
                 <Route path="/" element={<HomePage />} />
@@ -243,13 +697,28 @@ const HomePage: React.FC = () => {
   ];
   
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">欢迎使用多门店 ERP 系统</h1>
+    <div style={{ padding: { xs: '0', sm: '0' } }}>
+      <h1 style={{ 
+        fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }, 
+        fontWeight: 'bold', 
+        marginBottom: { xs: '1rem', sm: '1.5rem' }
+      }}>欢迎使用多门店 ERP 系统</h1>
       
       {/* 常用操作快捷方式 */}
       <Card className="mb-8" hoverable>
-        <h2 className="text-xl font-bold mb-4">常用操作</h2>
-        <Row gutter={[16, 16]}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginBottom: { xs: '1rem', sm: '1.5rem' }
+        }}>
+          <h2 style={{ 
+            fontSize: { xs: '1.25rem', sm: '1.5rem' }, 
+            fontWeight: 'bold',
+            margin: 0
+          }}>常用操作</h2>
+        </div>
+        <Row gutter={[{ xs: 12, sm: 16 }, { xs: 12, sm: 16 }]}>
           {commonActions.map((action, index) => (
             <Col key={index} xs={24} sm={12} md={8} lg={4}>
               <Link to={action.path}>
@@ -257,23 +726,38 @@ const HomePage: React.FC = () => {
                   display: 'flex', 
                   flexDirection: 'column', 
                   alignItems: 'center', 
-                  padding: '20px', 
-                  backgroundColor: '#f6f8fa', 
-                  borderRadius: '8px', 
+                  padding: { xs: '20px', sm: '24px' }, 
+                  backgroundColor: 'white', 
+                  borderRadius: '12px', 
                   cursor: 'pointer',
-                  transition: 'all 0.3s',
-                  border: `1px solid ${action.color}20`
+                  transition: 'all 0.3s ease',
+                  border: `1px solid ${action.color}20`,
+                  minHeight: '140px',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
                 }} onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.transform = 'translateY(-6px)';
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+                  e.currentTarget.style.borderColor = action.color;
                 }} onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
+                  e.currentTarget.style.borderColor = `${action.color}20`;
                 }}>
-                  <div style={{ fontSize: '32px', color: action.color, marginBottom: '8px' }}>
+                  <div style={{ 
+                    fontSize: { xs: '28px', sm: '36px' }, 
+                    color: action.color, 
+                    marginBottom: '12px',
+                    transition: 'all 0.3s ease'
+                  }}>
                     {action.icon}
                   </div>
-                  <div style={{ fontWeight: '500' }}>{action.title}</div>
+                  <div style={{ 
+                    fontWeight: '600', 
+                    textAlign: 'center',
+                    fontSize: { xs: '14px', sm: '16px' },
+                    color: '#333'
+                  }}>{action.title}</div>
                 </div>
               </Link>
             </Col>
@@ -282,67 +766,204 @@ const HomePage: React.FC = () => {
       </Card>
       
       {/* 统计卡片 */}
-      <Row gutter={[16, 16]} className="mb-8">
+      <Row gutter={[{ xs: 12, sm: 16 }, { xs: 12, sm: 16 }]} className="mb-8">
         <Col xs={24} sm={12} md={6}>
-          <Card hoverable loading={loading}>
+          <Card 
+            hoverable 
+            loading={loading}
+            style={{
+              transition: 'all 0.3s ease',
+              borderLeft: '4px solid #1890ff'
+            }}
+            onMouseEnter={(e) => {
+              const card = e.currentTarget as HTMLElement;
+              card.style.transform = 'translateY(-4px)';
+              card.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              const card = e.currentTarget as HTMLElement;
+              card.style.transform = 'translateY(0)';
+              card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.09)';
+            }}
+          >
             <Statistic
               title="总店铺数"
               value={10}
-              prefix={<ShopOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              prefix={<ShopOutlined style={{ color: '#1890ff' }} />}
+              valueStyle={{ color: '#1890ff', fontSize: '24px', fontWeight: 'bold' }}
               suffix="家"
+              size={window.innerWidth < 768 ? 'small' : 'default'}
+              titleStyle={{ fontSize: '14px', color: '#666' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card hoverable loading={loading}>
+          <Card 
+            hoverable 
+            loading={loading}
+            style={{
+              transition: 'all 0.3s ease',
+              borderLeft: '4px solid #52c41a'
+            }}
+            onMouseEnter={(e) => {
+              const card = e.currentTarget as HTMLElement;
+              card.style.transform = 'translateY(-4px)';
+              card.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              const card = e.currentTarget as HTMLElement;
+              card.style.transform = 'translateY(0)';
+              card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.09)';
+            }}
+          >
             <Statistic
               title="总商品数"
               value={1000}
-              prefix={<ProductOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              prefix={<ProductOutlined style={{ color: '#52c41a' }} />}
+              valueStyle={{ color: '#52c41a', fontSize: '24px', fontWeight: 'bold' }}
               suffix="件"
+              size={window.innerWidth < 768 ? 'small' : 'default'}
+              titleStyle={{ fontSize: '14px', color: '#666' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card hoverable loading={loading}>
+          <Card 
+            hoverable 
+            loading={loading}
+            style={{
+              transition: 'all 0.3s ease',
+              borderLeft: '4px solid #faad14'
+            }}
+            onMouseEnter={(e) => {
+              const card = e.currentTarget as HTMLElement;
+              card.style.transform = 'translateY(-4px)';
+              card.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              const card = e.currentTarget as HTMLElement;
+              card.style.transform = 'translateY(0)';
+              card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.09)';
+            }}
+          >
             <Statistic
               title="今日销售额"
               value={10000}
-              prefix="¥"
-              valueStyle={{ color: '#faad14' }}
+              prefix={<span style={{ color: '#faad14', marginRight: '4px' }}>¥</span>}
+              valueStyle={{ color: '#faad14', fontSize: '24px', fontWeight: 'bold' }}
+              size={window.innerWidth < 768 ? 'small' : 'default'}
+              titleStyle={{ fontSize: '14px', color: '#666' }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <Card hoverable loading={loading}>
+          <Card 
+            hoverable 
+            loading={loading}
+            style={{
+              transition: 'all 0.3s ease',
+              borderLeft: '4px solid #f5222d'
+            }}
+            onMouseEnter={(e) => {
+              const card = e.currentTarget as HTMLElement;
+              card.style.transform = 'translateY(-4px)';
+              card.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              const card = e.currentTarget as HTMLElement;
+              card.style.transform = 'translateY(0)';
+              card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.09)';
+            }}
+          >
             <Statistic
               title="库存总量"
               value={5000}
-              prefix={<StockOutlined />}
-              valueStyle={{ color: '#f5222d' }}
+              prefix={<StockOutlined style={{ color: '#f5222d' }} />}
+              valueStyle={{ color: '#f5222d', fontSize: '24px', fontWeight: 'bold' }}
               suffix="件"
+              size={window.innerWidth < 768 ? 'small' : 'default'}
+              titleStyle={{ fontSize: '14px', color: '#666' }}
             />
           </Card>
         </Col>
       </Row>
       
       {/* 最近销售和库存预警 */}
-      <Row gutter={[16, 16]}>
+      <Row gutter={[{ xs: 12, sm: 16 }, { xs: 12, sm: 16 }]}>
         <Col xs={24} md={12}>
-          <Card title="最近销售订单" hoverable loading={loading}>
+          <Card 
+            title="最近销售订单" 
+            hoverable 
+            loading={loading}
+            style={{
+              transition: 'all 0.3s ease',
+              borderRadius: 12
+            }}
+            onMouseEnter={(e) => {
+              const card = e.currentTarget as HTMLElement;
+              card.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              const card = e.currentTarget as HTMLElement;
+              card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.09)';
+            }}
+            titleStyle={{
+              fontWeight: '600',
+              fontSize: '16px',
+              color: '#333'
+            }}
+          >
             <Table 
               columns={[
-                { title: '订单号', dataIndex: 'id', key: 'id' },
-                { title: '店铺', dataIndex: 'shopId', key: 'shopId' },
-                { title: '金额', dataIndex: 'amount', key: 'amount', render: (amount: number) => `¥${amount}` },
-                { title: '状态', dataIndex: 'status', key: 'status', render: (status: string) => (
-                  <Tag color={status === 'completed' ? 'green' : 'yellow'}>
-                    {status === 'completed' ? '已完成' : '待处理'}
-                  </Tag>
-                )},
-                { title: '时间', dataIndex: 'time', key: 'time' },
+                { 
+                  title: '订单号', 
+                  dataIndex: 'id', 
+                  key: 'id', 
+                  width: { xs: 80, sm: 100 },
+                  ellipsis: true
+                },
+                { 
+                  title: '店铺', 
+                  dataIndex: 'shopId', 
+                  key: 'shopId', 
+                  ellipsis: true,
+                  render: (shopId: string) => (
+                    <span style={{ fontWeight: '500' }}>{shopId}</span>
+                  )
+                },
+                { 
+                  title: '金额', 
+                  dataIndex: 'amount', 
+                  key: 'amount', 
+                  render: (amount: number) => (
+                    <span style={{ fontWeight: '600', color: '#1890ff' }}>¥{amount}</span>
+                  ),
+                  width: { xs: 100, sm: 120 }
+                },
+                { 
+                  title: '状态', 
+                  dataIndex: 'status', 
+                  key: 'status', 
+                  render: (status: string) => (
+                    <Tag 
+                      color={status === 'completed' ? 'green' : 'yellow'}
+                      style={{ fontSize: '12px', padding: '2px 8px' }}
+                    >
+                      {status === 'completed' ? '已完成' : '待处理'}
+                    </Tag>
+                  ),
+                  width: { xs: 80, sm: 100 }
+                },
+                { 
+                  title: '时间', 
+                  dataIndex: 'time', 
+                  key: 'time', 
+                  ellipsis: true,
+                  width: { xs: 120, sm: 150 },
+                  render: (time: string) => (
+                    <span style={{ fontSize: '12px', color: '#666' }}>{time}</span>
+                  )
+                },
               ]} 
               dataSource={[
                 { id: '1', shopId: '北京旗舰店', amount: 5999, status: 'completed', time: '2026-04-15 10:00' },
@@ -351,22 +972,90 @@ const HomePage: React.FC = () => {
               ]} 
               rowKey="id"
               pagination={false}
+              size={window.innerWidth < 768 ? 'small' : 'default'}
+              rowClassName={() => 'hover:bg-gray-50'}
+              style={{
+                borderRadius: 8,
+                overflow: 'hidden'
+              }}
             />
           </Card>
         </Col>
         <Col xs={24} md={12}>
-          <Card title="库存预警" hoverable loading={loading}>
+          <Card 
+            title="库存预警" 
+            hoverable 
+            loading={loading}
+            style={{
+              transition: 'all 0.3s ease',
+              borderRadius: 12
+            }}
+            onMouseEnter={(e) => {
+              const card = e.currentTarget as HTMLElement;
+              card.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              const card = e.currentTarget as HTMLElement;
+              card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.09)';
+            }}
+            titleStyle={{
+              fontWeight: '600',
+              fontSize: '16px',
+              color: '#333'
+            }}
+          >
             <Table 
               columns={[
-                { title: '商品名称', dataIndex: 'name', key: 'name' },
-                { title: '当前库存', dataIndex: 'current', key: 'current' },
-                { title: '最低库存', dataIndex: 'min', key: 'min' },
-                { title: '店铺', dataIndex: 'shop', key: 'shop' },
-                { title: '状态', dataIndex: 'status', key: 'status', render: (status: string) => (
-                  <Tag color={status === 'critical' ? 'red' : 'orange'}>
-                    {status === 'critical' ? '严重不足' : '即将不足'}
-                  </Tag>
-                )},
+                { 
+                  title: '商品名称', 
+                  dataIndex: 'name', 
+                  key: 'name', 
+                  ellipsis: true,
+                  render: (name: string) => (
+                    <span style={{ fontWeight: '500' }}>{name}</span>
+                  )
+                },
+                { 
+                  title: '当前库存', 
+                  dataIndex: 'current', 
+                  key: 'current', 
+                  width: 80,
+                  render: (current: number, record: any) => (
+                    <span style={{ 
+                      fontWeight: '600',
+                      color: record.status === 'critical' ? '#f5222d' : '#333'
+                    }}>{current}</span>
+                  )
+                },
+                { 
+                  title: '最低库存', 
+                  dataIndex: 'min', 
+                  key: 'min', 
+                  width: 80,
+                  render: (min: number) => (
+                    <span style={{ color: '#666' }}>{min}</span>
+                  )
+                },
+                { 
+                  title: '店铺', 
+                  dataIndex: 'shop', 
+                  key: 'shop', 
+                  ellipsis: true
+                },
+                { 
+                  title: '状态', 
+                  dataIndex: 'status', 
+                  key: 'status', 
+                  render: (status: string) => (
+                    <Tag 
+                      color={status === 'critical' ? 'red' : 'orange'}
+                      style={{ fontSize: '12px', padding: '2px 8px' }}
+                    >
+                      {status === 'critical' ? '严重不足' : '即将不足'}
+                    </Tag>
+                  ),
+                  width: { xs: 90, sm: 120 }
+                },
               ]} 
               dataSource={[
                 { name: 'iPhone 15', current: 5, min: 10, shop: '北京旗舰店', status: 'critical' },
@@ -375,6 +1064,12 @@ const HomePage: React.FC = () => {
               ]} 
               rowKey="name"
               pagination={false}
+              size={window.innerWidth < 768 ? 'small' : 'default'}
+              rowClassName={() => 'hover:bg-gray-50'}
+              style={{
+                borderRadius: 8,
+                overflow: 'hidden'
+              }}
             />
           </Card>
         </Col>
@@ -506,6 +1201,14 @@ const ShopPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [shops, searchValue, selectedManager, advancedSearch]);
 
+  // 处理重置筛选
+  const handleResetFilters = () => {
+    setSearchValue('');
+    setSelectedManager('');
+    setAdvancedSearch({ name: '', address: '', phone: '', manager: '' });
+    setIsAdvancedSearchOpen(false);
+  };
+
   const showModal = (shop?: any) => {
     if (shop) {
       setEditingShop(shop);
@@ -573,6 +1276,26 @@ const ShopPage: React.FC = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, '店铺数据');
     XLSX.writeFile(workbook, `店铺数据_${new Date().toISOString().split('T')[0]}.xlsx`);
     message.success('导出成功');
+  };
+
+  // 导出PDF
+  const exportToPDF = () => {
+    // 模拟PDF导出功能
+    // 实际项目中可以使用jsPDF、html2pdf等库实现
+    message.info('PDF导出功能开发中，敬请期待');
+    // 这里可以添加实际的PDF导出代码
+    // 例如使用jsPDF库生成PDF文件
+    /*
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text('店铺数据', 10, 10);
+    let y = 20;
+    filteredShops.forEach((shop, index) => {
+      doc.text(`${index + 1}. ${shop.name} - ${shop.address} - ${shop.phone} - ${shop.manager}`, 10, y);
+      y += 10;
+    });
+    doc.save(`店铺数据_${new Date().toISOString().split('T')[0]}.pdf`);
+    */
   };
 
   // 导入Excel
@@ -730,7 +1453,14 @@ const ShopPage: React.FC = () => {
             >
               <Button icon={<UploadOutlined />}>导入Excel</Button>
             </Upload.Dragger>
-            <Dropdown menu={{ items: [{ key: 'excel', label: '导出Excel', onClick: exportToExcel }] }}>
+            <Dropdown 
+              menu={{ 
+                items: [
+                  { key: 'excel', label: '导出Excel', onClick: exportToExcel },
+                  { key: 'pdf', label: '导出PDF', onClick: exportToPDF },
+                ] 
+              }} 
+            >
               <Button icon={<DownloadOutlined />}>导出</Button>
             </Dropdown>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>添加店铺</Button>
@@ -800,45 +1530,77 @@ const ShopPage: React.FC = () => {
             </Select>
           </Col>
           <Col xs={24} sm={12} md={4} offset={6}>
-            <Button type="default" onClick={() => {
-              setSearchValue('');
-              setSelectedManager('');
-            }}>重置筛选</Button>
+            <Button type="default" onClick={handleResetFilters}>重置筛选</Button>
           </Col>
         </Row>
         
         {/* 高级搜索 */}
         <div className="mt-4">
-          <Button type="link" onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}>
+          <Button 
+            type="link" 
+            onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
+            style={{ fontSize: '14px' }}
+          >
             {isAdvancedSearchOpen ? '收起高级搜索' : '高级搜索'}
           </Button>
           {isAdvancedSearchOpen && (
-            <div className="mt-4 p-4 bg-gray-50 rounded">
+            <div className="mt-4 p-4 bg-gray-50 rounded" style={{ borderRadius: 8, border: '1px solid #e8e8e8' }}>
               <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} md={8}>
-                  <Form.Item label="店铺名称">
-                    <Input placeholder="请输入店铺名称" value={advancedSearch.name} onChange={(e) => setAdvancedSearch({...advancedSearch, name: e.target.value})} />
+                  <Form.Item label="店铺名称" labelStyle={{ fontSize: '14px', color: '#666' }}>
+                    <Input 
+                      placeholder="请输入店铺名称" 
+                      value={advancedSearch.name} 
+                      onChange={(e) => setAdvancedSearch({...advancedSearch, name: e.target.value})}
+                      style={{ borderRadius: 4 }}
+                    />
                   </Form.Item>
                 </Col>
                 <Col xs={24} sm={12} md={8}>
-                  <Form.Item label="地址">
-                    <Input placeholder="请输入地址" value={advancedSearch.address} onChange={(e) => setAdvancedSearch({...advancedSearch, address: e.target.value})} />
+                  <Form.Item label="地址" labelStyle={{ fontSize: '14px', color: '#666' }}>
+                    <Input 
+                      placeholder="请输入地址" 
+                      value={advancedSearch.address} 
+                      onChange={(e) => setAdvancedSearch({...advancedSearch, address: e.target.value})}
+                      style={{ borderRadius: 4 }}
+                    />
                   </Form.Item>
                 </Col>
                 <Col xs={24} sm={12} md={8}>
-                  <Form.Item label="电话">
-                    <Input placeholder="请输入电话" value={advancedSearch.phone} onChange={(e) => setAdvancedSearch({...advancedSearch, phone: e.target.value})} />
+                  <Form.Item label="电话" labelStyle={{ fontSize: '14px', color: '#666' }}>
+                    <Input 
+                      placeholder="请输入电话" 
+                      value={advancedSearch.phone} 
+                      onChange={(e) => setAdvancedSearch({...advancedSearch, phone: e.target.value})}
+                      style={{ borderRadius: 4 }}
+                    />
                   </Form.Item>
                 </Col>
                 <Col xs={24} sm={12} md={8}>
-                  <Form.Item label="负责人">
-                    <Input placeholder="请输入负责人" value={advancedSearch.manager} onChange={(e) => setAdvancedSearch({...advancedSearch, manager: e.target.value})} />
+                  <Form.Item label="负责人" labelStyle={{ fontSize: '14px', color: '#666' }}>
+                    <Input 
+                      placeholder="请输入负责人" 
+                      value={advancedSearch.manager} 
+                      onChange={(e) => setAdvancedSearch({...advancedSearch, manager: e.target.value})}
+                      style={{ borderRadius: 4 }}
+                    />
                   </Form.Item>
                 </Col>
                 <Col xs={24} sm={24} md={16} className="flex justify-end">
                   <Space>
-                    <Button onClick={() => setAdvancedSearch({ name: '', address: '', phone: '', manager: '' })}>清空</Button>
-                    <Button type="primary" onClick={handleAdvancedSearch}>应用筛选</Button>
+                    <Button 
+                      onClick={() => setAdvancedSearch({ name: '', address: '', phone: '', manager: '' })}
+                      style={{ borderRadius: 4 }}
+                    >
+                      清空
+                    </Button>
+                    <Button 
+                      type="primary" 
+                      onClick={handleAdvancedSearch}
+                      style={{ borderRadius: 4 }}
+                    >
+                      应用筛选
+                    </Button>
                   </Space>
                 </Col>
               </Row>
@@ -1092,6 +1854,15 @@ const ProductPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [products, searchValue, selectedCategory, selectedBrand, advancedSearch]);
 
+  // 处理重置筛选
+  const handleResetFilters = () => {
+    setSearchValue('');
+    setSelectedCategory('');
+    setSelectedBrand('');
+    setAdvancedSearch({ name: '', model: '', minPrice: '', maxPrice: '', minStock: '', maxStock: '' });
+    setIsAdvancedSearchOpen(false);
+  };
+
   const showModal = (product?: any) => {
     if (product) {
       setEditingProduct(product);
@@ -1163,6 +1934,26 @@ const ProductPage: React.FC = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, '商品数据');
     XLSX.writeFile(workbook, `商品数据_${new Date().toISOString().split('T')[0]}.xlsx`);
     message.success('导出成功');
+  };
+
+  // 导出PDF
+  const exportToPDF = () => {
+    // 模拟PDF导出功能
+    // 实际项目中可以使用jsPDF、html2pdf等库实现
+    message.info('PDF导出功能开发中，敬请期待');
+    // 这里可以添加实际的PDF导出代码
+    // 例如使用jsPDF库生成PDF文件
+    /*
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text('商品数据', 10, 10);
+    let y = 20;
+    filteredProducts.forEach((product, index) => {
+      doc.text(`${index + 1}. ${product.name} - ${product.category} - ${product.brand} - ${product.model} - ¥${product.price} - 库存: ${product.stock}`, 10, y);
+      y += 10;
+    });
+    doc.save(`商品数据_${new Date().toISOString().split('T')[0]}.pdf`);
+    */
   };
 
   // 导入Excel
@@ -1339,7 +2130,14 @@ const ProductPage: React.FC = () => {
             >
               <Button icon={<UploadOutlined />}>导入Excel</Button>
             </Upload.Dragger>
-            <Dropdown menu={{ items: [{ key: 'excel', label: '导出Excel', onClick: exportToExcel }] }}>
+            <Dropdown 
+              menu={{ 
+                items: [
+                  { key: 'excel', label: '导出Excel', onClick: exportToExcel },
+                  { key: 'pdf', label: '导出PDF', onClick: exportToPDF },
+                ] 
+              }} 
+            >
               <Button icon={<DownloadOutlined />}>导出</Button>
             </Dropdown>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>添加商品</Button>
@@ -1386,61 +2184,111 @@ const ProductPage: React.FC = () => {
             </Select>
           </Col>
           <Col xs={24} sm={12} md={4} offset={4}>
-            <Button type="default" onClick={() => {
-              setSearchValue('');
-              setSelectedCategory('');
-              setSelectedBrand('');
-              setAdvancedSearch({ name: '', model: '', minPrice: '', maxPrice: '', minStock: '', maxStock: '' });
-            }}>重置筛选</Button>
+            <Button type="default" onClick={handleResetFilters}>重置筛选</Button>
           </Col>
         </Row>
         
         {/* 高级搜索 */}
         <div className="mt-4">
-          <Button type="link" onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}>
+          <Button 
+            type="link" 
+            onClick={() => setIsAdvancedSearchOpen(!isAdvancedSearchOpen)}
+            style={{ fontSize: '14px' }}
+          >
             {isAdvancedSearchOpen ? '收起高级搜索' : '高级搜索'}
           </Button>
           {isAdvancedSearchOpen && (
-            <div className="mt-4 p-4 bg-gray-50 rounded">
+            <div className="mt-4 p-4 bg-gray-50 rounded" style={{ borderRadius: 8, border: '1px solid #e8e8e8' }}>
               <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} md={8}>
-                  <Form.Item label="商品名称">
-                    <Input placeholder="请输入商品名称" value={advancedSearch.name} onChange={(e) => setAdvancedSearch({...advancedSearch, name: e.target.value})} />
+                  <Form.Item label="商品名称" labelStyle={{ fontSize: '14px', color: '#666' }}>
+                    <Input 
+                      placeholder="请输入商品名称" 
+                      value={advancedSearch.name} 
+                      onChange={(e) => setAdvancedSearch({...advancedSearch, name: e.target.value})}
+                      style={{ borderRadius: 4 }}
+                    />
                   </Form.Item>
                 </Col>
                 <Col xs={24} sm={12} md={8}>
-                  <Form.Item label="型号">
-                    <Input placeholder="请输入型号" value={advancedSearch.model} onChange={(e) => setAdvancedSearch({...advancedSearch, model: e.target.value})} />
+                  <Form.Item label="型号" labelStyle={{ fontSize: '14px', color: '#666' }}>
+                    <Input 
+                      placeholder="请输入型号" 
+                      value={advancedSearch.model} 
+                      onChange={(e) => setAdvancedSearch({...advancedSearch, model: e.target.value})}
+                      style={{ borderRadius: 4 }}
+                    />
                   </Form.Item>
                 </Col>
                 <Col xs={24} sm={12} md={8}>
-                  <Form.Item label="价格范围">
+                  <Form.Item label="价格范围" labelStyle={{ fontSize: '14px', color: '#666' }}>
                     <Row gutter={8}>
                       <Col span={12}>
-                        <Input placeholder="最低" type="number" min="0" step="0.01" value={advancedSearch.minPrice} onChange={(e) => setAdvancedSearch({...advancedSearch, minPrice: e.target.value})} />
+                        <Input 
+                          placeholder="最低" 
+                          type="number" 
+                          min="0" 
+                          step="0.01" 
+                          value={advancedSearch.minPrice} 
+                          onChange={(e) => setAdvancedSearch({...advancedSearch, minPrice: e.target.value})}
+                          style={{ borderRadius: 4 }}
+                        />
                       </Col>
                       <Col span={12}>
-                        <Input placeholder="最高" type="number" min="0" step="0.01" value={advancedSearch.maxPrice} onChange={(e) => setAdvancedSearch({...advancedSearch, maxPrice: e.target.value})} />
+                        <Input 
+                          placeholder="最高" 
+                          type="number" 
+                          min="0" 
+                          step="0.01" 
+                          value={advancedSearch.maxPrice} 
+                          onChange={(e) => setAdvancedSearch({...advancedSearch, maxPrice: e.target.value})}
+                          style={{ borderRadius: 4 }}
+                        />
                       </Col>
                     </Row>
                   </Form.Item>
                 </Col>
                 <Col xs={24} sm={12} md={8}>
-                  <Form.Item label="库存范围">
+                  <Form.Item label="库存范围" labelStyle={{ fontSize: '14px', color: '#666' }}>
                     <Row gutter={8}>
                       <Col span={12}>
-                        <Input placeholder="最低" type="number" min="0" value={advancedSearch.minStock} onChange={(e) => setAdvancedSearch({...advancedSearch, minStock: e.target.value})} />
+                        <Input 
+                          placeholder="最低" 
+                          type="number" 
+                          min="0" 
+                          value={advancedSearch.minStock} 
+                          onChange={(e) => setAdvancedSearch({...advancedSearch, minStock: e.target.value})}
+                          style={{ borderRadius: 4 }}
+                        />
                       </Col>
                       <Col span={12}>
-                        <Input placeholder="最高" type="number" min="0" value={advancedSearch.maxStock} onChange={(e) => setAdvancedSearch({...advancedSearch, maxStock: e.target.value})} />
+                        <Input 
+                          placeholder="最高" 
+                          type="number" 
+                          min="0" 
+                          value={advancedSearch.maxStock} 
+                          onChange={(e) => setAdvancedSearch({...advancedSearch, maxStock: e.target.value})}
+                          style={{ borderRadius: 4 }}
+                        />
                       </Col>
                     </Row>
                   </Form.Item>
                 </Col>
                 <Col xs={24} sm={24} md={16} className="flex justify-end">
                   <Space>
-                    <Button onClick={() => setAdvancedSearch({ name: '', model: '', minPrice: '', maxPrice: '', minStock: '', maxStock: '' })}>清空</Button>
-                    <Button type="primary" onClick={handleAdvancedSearch}>应用筛选</Button>
+                    <Button 
+                      onClick={() => setAdvancedSearch({ name: '', model: '', minPrice: '', maxPrice: '', minStock: '', maxStock: '' })}
+                      style={{ borderRadius: 4 }}
+                    >
+                      清空
+                    </Button>
+                    <Button 
+                      type="primary" 
+                      onClick={handleAdvancedSearch}
+                      style={{ borderRadius: 4 }}
+                    >
+                      应用筛选
+                    </Button>
                   </Space>
                 </Col>
               </Row>
@@ -1710,6 +2558,15 @@ const InventoryPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [inventory, searchValue, selectedShop, selectedStockStatus]);
 
+  // 处理重置筛选
+  const handleResetFilters = () => {
+    setSearchValue('');
+    setSelectedShop('');
+    setSelectedStockStatus('');
+    setLogSearchValue('');
+    setSelectedLogType('');
+  };
+
   // 过滤库存日志数据
   React.useEffect(() => {
     // 使用setTimeout模拟异步数据处理，避免阻塞主线程
@@ -1805,6 +2662,26 @@ const InventoryPage: React.FC = () => {
     message.success('导出成功');
   };
 
+  // 导出PDF
+  const exportToPDF = () => {
+    // 模拟PDF导出功能
+    // 实际项目中可以使用jsPDF、html2pdf等库实现
+    message.info('PDF导出功能开发中，敬请期待');
+    // 这里可以添加实际的PDF导出代码
+    // 例如使用jsPDF库生成PDF文件
+    /*
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text('库存数据', 10, 10);
+    let y = 20;
+    filteredInventory.forEach((item, index) => {
+      doc.text(`${index + 1}. ${item.productName} - 当前库存: ${item.currentStock} - 最低库存: ${item.minStock} - 店铺: ${item.shopId} - 状态: ${item.currentStock <= item.minStock ? '库存不足' : '库存正常'}`, 10, y);
+      y += 10;
+    });
+    doc.save(`库存数据_${new Date().toISOString().split('T')[0]}.pdf`);
+    */
+  };
+
   // 导出库存日志
   const exportLogsToExcel = () => {
     const exportData = filteredLogs.map(log => ({
@@ -1823,9 +2700,40 @@ const InventoryPage: React.FC = () => {
     message.success('导出成功');
   };
 
+  // 导出库存日志PDF
+  const exportLogsToPDF = () => {
+    // 模拟PDF导出功能
+    // 实际项目中可以使用jsPDF、html2pdf等库实现
+    message.info('PDF导出功能开发中，敬请期待');
+    // 这里可以添加实际的PDF导出代码
+    // 例如使用jsPDF库生成PDF文件
+    /*
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text('库存变动记录', 10, 10);
+    let y = 20;
+    filteredLogs.forEach((log, index) => {
+      doc.text(`${index + 1}. ${log.productName} - ${log.type === 'in' ? '+' : '-'}${log.quantity} - ${log.type === 'in' ? '入库' : '出库'} - ${log.reason} - ${log.shopId} - ${log.createdAt}`, 10, y);
+      y += 10;
+    });
+    doc.save(`库存变动记录_${new Date().toISOString().split('T')[0]}.pdf`);
+    */
+  };
+
   // 处理选择变化
   const handleSelectChange = (selectedRowKeys: string[]) => {
     setSelectedInventoryIds(selectedRowKeys);
+  };
+
+  // 批量删除
+  const handleBatchDelete = () => {
+    if (selectedInventoryIds.length === 0) {
+      message.warning('请选择要删除的库存');
+      return;
+    }
+    setInventory(inventory.filter(item => !selectedInventoryIds.includes(item.id)));
+    setSelectedInventoryIds([]);
+    message.success(`成功删除 ${selectedInventoryIds.length} 个库存记录`);
   };
 
   // 打开批量编辑模态框
@@ -1927,11 +2835,16 @@ const InventoryPage: React.FC = () => {
         <h1 className="text-2xl font-bold">库存管理</h1>
         <Space>
           {selectedInventoryIds.length > 0 && (
-            <Button type="primary" icon={<EditOutlined />} onClick={handleBatchEdit}>批量编辑</Button>
+            <Space>
+              <Button danger icon={<DeleteOutlined />} onClick={handleBatchDelete}>批量删除</Button>
+              <Button type="primary" icon={<EditOutlined />} onClick={handleBatchEdit}>批量编辑</Button>
+            </Space>
           )}
           <Dropdown menu={{ items: [
-            { key: 'inventory', label: '导出库存数据', onClick: exportToExcel },
-            { key: 'logs', label: '导出变动记录', onClick: exportLogsToExcel }
+            { key: 'inventory-excel', label: '导出库存数据(Excel)', onClick: exportToExcel },
+            { key: 'inventory-pdf', label: '导出库存数据(PDF)', onClick: exportToPDF },
+            { key: 'logs-excel', label: '导出变动记录(Excel)', onClick: exportLogsToExcel },
+            { key: 'logs-pdf', label: '导出变动记录(PDF)', onClick: exportLogsToPDF }
           ] }}>
             <Button icon={<DownloadOutlined />}>导出</Button>
           </Dropdown>
@@ -1996,11 +2909,7 @@ const InventoryPage: React.FC = () => {
             </Select>
           </Col>
           <Col xs={24} sm={12} md={4} offset={4}>
-            <Button type="default" onClick={() => {
-              setSearchValue('');
-              setSelectedShop('');
-              setSelectedStockStatus('');
-            }}>重置筛选</Button>
+            <Button type="default" onClick={handleResetFilters}>重置筛选</Button>
           </Col>
         </Row>
         
@@ -2041,10 +2950,7 @@ const InventoryPage: React.FC = () => {
             </Select>
           </Col>
           <Col xs={24} sm={12} md={4} offset={8}>
-            <Button type="default" onClick={() => {
-              setLogSearchValue('');
-              setSelectedLogType('');
-            }}>重置筛选</Button>
+            <Button type="default" onClick={handleResetFilters}>重置筛选</Button>
           </Col>
         </Row>
         
@@ -2237,6 +3143,13 @@ const SalesPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [orders, searchValue, selectedShop, selectedStatus]);
 
+  // 处理重置筛选
+  const handleResetFilters = () => {
+    setSearchValue('');
+    setSelectedShop('');
+    setSelectedStatus('');
+  };
+
   const showModal = () => {
     form.setFieldsValue({ shopId: '', items: [{ productId: '', productName: '', quantity: 1, price: 0 }] });
     setIsModalOpen(true);
@@ -2366,6 +3279,31 @@ const SalesPage: React.FC = () => {
     message.success('导出成功');
   };
 
+  // 导出PDF
+  const exportToPDF = () => {
+    // 模拟PDF导出功能
+    // 实际项目中可以使用jsPDF、html2pdf等库实现
+    message.info('PDF导出功能开发中，敬请期待');
+    // 这里可以添加实际的PDF导出代码
+    // 例如使用jsPDF库生成PDF文件
+    /*
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text('销售订单数据', 10, 10);
+    let y = 20;
+    filteredOrders.forEach((order, index) => {
+      doc.text(`${index + 1}. 订单号: ${order.id} - 店铺: ${order.shopId} - 金额: ¥${order.totalAmount} - 状态: ${order.status === 'completed' ? '已完成' : order.status === 'pending' ? '待处理' : '已取消'}`, 10, y);
+      y += 10;
+      order.items.forEach((item: any) => {
+        doc.text(`  - ${item.productName} x ${item.quantity} - ¥${item.price}`, 20, y);
+        y += 8;
+      });
+      y += 5;
+    });
+    doc.save(`销售订单_${new Date().toISOString().split('T')[0]}.pdf`);
+    */
+  };
+
   const columns = [
     {
       title: () => <Checkbox indeterminate={selectedOrderIds.length > 0 && selectedOrderIds.length < filteredOrders.length} checked={filteredOrders.length > 0 && selectedOrderIds.length === filteredOrders.length} onChange={(e) => {
@@ -2435,7 +3373,14 @@ const SalesPage: React.FC = () => {
               <Button type="primary" icon={<EditOutlined />} onClick={handleBatchEdit}>批量编辑</Button>
             </Space>
           )}
-          <Dropdown menu={{ items: [{ key: 'excel', label: '导出Excel', onClick: exportToExcel }] }}>
+          <Dropdown 
+            menu={{ 
+              items: [
+                { key: 'excel', label: '导出Excel', onClick: exportToExcel },
+                { key: 'pdf', label: '导出PDF', onClick: exportToPDF },
+              ] 
+            }} 
+          >
             <Button icon={<DownloadOutlined />}>导出</Button>
           </Dropdown>
           <Button type="primary" icon={<PlusOutlined />} onClick={showModal}>添加订单</Button>
@@ -2481,11 +3426,7 @@ const SalesPage: React.FC = () => {
             </Select>
           </Col>
           <Col xs={24} sm={12} md={4} offset={4}>
-            <Button type="default" onClick={() => {
-              setSearchValue('');
-              setSelectedShop('');
-              setSelectedStatus('');
-            }}>重置筛选</Button>
+            <Button type="default" onClick={handleResetFilters}>重置筛选</Button>
           </Col>
         </Row>
       </Card>
