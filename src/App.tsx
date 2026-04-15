@@ -1464,23 +1464,49 @@ const UserPage: React.FC = () => {
   );
 };
 
+import { getRoles, getRolePermissions, updateRolePermissions, createRole, updateRole, deleteRole } from './services/roleService';
+import { getPermissions, createPermission, updatePermission, deletePermission } from './services/permissionService';
+
 const RolePage: React.FC = () => {
   const [roles, setRoles] = React.useState<any[]>([]);
+  const [permissions, setPermissions] = React.useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isPermissionModalOpen, setIsPermissionModalOpen] = React.useState(false);
   const [editingRole, setEditingRole] = React.useState<any>(null);
   const [selectedRole, setSelectedRole] = React.useState<any>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isPermissionLoading, setIsPermissionLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const [form] = Form.useForm();
   const [permissionForm] = Form.useForm();
 
   React.useEffect(() => {
-    // 模拟获取角色列表
-    setRoles([
-      { id: '1', name: 'admin', description: '超级管理员', isSystem: true, permissions: [] },
-      { id: '2', name: 'manager', description: '店长', isSystem: true, permissions: [] },
-      { id: '3', name: 'staff', description: '员工', isSystem: true, permissions: [] },
-    ]);
+    loadRoles();
+    loadPermissions();
   }, []);
+
+  const loadRoles = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const rolesData = await getRoles();
+      setRoles(rolesData);
+    } catch (err) {
+      console.error('Error loading roles:', err);
+      setError('加载角色列表失败');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadPermissions = async () => {
+    try {
+      const permissionsData = await getPermissions();
+      setPermissions(permissionsData);
+    } catch (err) {
+      console.error('Error loading permissions:', err);
+    }
+  };
 
   const showModal = (role?: any) => {
     if (role) {
@@ -1498,29 +1524,53 @@ const RolePage: React.FC = () => {
     form.resetFields();
   };
 
-  const handleOk = () => {
-    form.validateFields().then(values => {
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
       if (editingRole) {
-        setRoles(roles.map(role => role.id === editingRole.id ? { ...role, ...values } : role));
+        await updateRole(editingRole.id, values);
+        await loadRoles();
         message.success('角色更新成功');
       } else {
-        setRoles([...roles, { id: String(roles.length + 1), ...values, isSystem: false, permissions: [] }]);
+        await createRole({ ...values, isSystem: false });
+        await loadRoles();
         message.success('角色添加成功');
       }
       setIsModalOpen(false);
       form.resetFields();
-    });
+    } catch (error) {
+      console.error('Error saving role:', error);
+      message.error('操作失败，请重试');
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setRoles(roles.filter(role => role.id !== id));
-    message.success('角色删除成功');
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteRole(id);
+      await loadRoles();
+      message.success('角色删除成功');
+    } catch (error) {
+      console.error('Error deleting role:', error);
+      message.error('删除失败，请重试');
+    }
   };
 
-  const handlePermissionManage = (role: any) => {
-    setSelectedRole(role);
-    permissionForm.setFieldsValue({ permissions: role.permissions || [] });
-    setIsPermissionModalOpen(true);
+  const handlePermissionManage = async (role: any) => {
+    try {
+      setIsPermissionLoading(true);
+      setError(null);
+      const rolePermissions = await getRolePermissions(role.id);
+      setSelectedRole(role);
+      // 提取权限ID数组
+      const permissionIds = rolePermissions.map((permission: any) => permission.id);
+      permissionForm.setFieldsValue({ permissions: permissionIds || [] });
+      setIsPermissionModalOpen(true);
+    } catch (err) {
+      console.error('Error loading role permissions:', err);
+      message.error('加载角色权限失败');
+    } finally {
+      setIsPermissionLoading(false);
+    }
   };
 
   const handlePermissionCancel = () => {
@@ -1528,13 +1578,23 @@ const RolePage: React.FC = () => {
     permissionForm.resetFields();
   };
 
-  const handlePermissionOk = () => {
-    permissionForm.validateFields().then(values => {
-      setRoles(roles.map(r => r.id === selectedRole.id ? { ...r, permissions: values.permissions } : r));
+  const handlePermissionOk = async () => {
+    try {
+      setIsPermissionLoading(true);
+      setError(null);
+      const values = await permissionForm.validateFields();
+      await updateRolePermissions(selectedRole.id, values.permissions);
+      // 重新加载角色列表以更新权限信息
+      await loadRoles();
       message.success('权限更新成功');
       setIsPermissionModalOpen(false);
       permissionForm.resetFields();
-    });
+    } catch (err) {
+      console.error('Error updating role permissions:', err);
+      message.error('更新角色权限失败');
+    } finally {
+      setIsPermissionLoading(false);
+    }
   };
 
   const columns = [
@@ -1613,6 +1673,7 @@ const RolePage: React.FC = () => {
         open={isPermissionModalOpen}
         onCancel={handlePermissionCancel}
         onOk={handlePermissionOk}
+        confirmLoading={isPermissionLoading}
         width={600}
       >
         <Form
@@ -1628,23 +1689,10 @@ const RolePage: React.FC = () => {
               mode="multiple"
               placeholder="请选择权限"
               style={{ width: '100%' }}
-              options={[
-                { value: 'dashboard.view', label: '查看首页' },
-                { value: 'shop.manage', label: '店铺管理' },
-                { value: 'shop.view', label: '查看店铺' },
-                { value: 'shop.create', label: '创建店铺' },
-                { value: 'shop.edit', label: '编辑店铺' },
-                { value: 'shop.delete', label: '删除店铺' },
-                { value: 'product.manage', label: '商品管理' },
-                { value: 'inventory.manage', label: '库存管理' },
-                { value: 'sales.manage', label: '销售管理' },
-                { value: 'financial.manage', label: '财务管理' },
-                { value: 'report.manage', label: '报表管理' },
-                { value: 'user.manage', label: '用户管理' },
-                { value: 'role.manage', label: '角色管理' },
-                { value: 'permission.manage', label: '权限管理' },
-                { value: 'system.manage', label: '系统设置' },
-              ]}
+              options={permissions.map(permission => ({
+                value: permission.id,
+                label: permission.name
+              }))}
             />
           </Form.Item>
         </Form>
@@ -1655,27 +1703,76 @@ const RolePage: React.FC = () => {
 
 const PermissionPage: React.FC = () => {
   const [permissions, setPermissions] = React.useState<any[]>([]);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [editingPermission, setEditingPermission] = React.useState<any>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [form] = Form.useForm();
 
   React.useEffect(() => {
-    // 模拟获取权限列表
-    setPermissions([
-      { id: '1', code: 'dashboard.view', name: '查看首页', description: '允许访问首页', type: 'menu' },
-      { id: '2', code: 'shop.manage', name: '店铺管理', description: '允许访问店铺管理菜单', type: 'menu' },
-      { id: '3', code: 'shop.view', name: '查看店铺', description: '允许查看店铺列表', type: 'action' },
-      { id: '4', code: 'shop.create', name: '创建店铺', description: '允许创建店铺', type: 'action' },
-      { id: '5', code: 'shop.edit', name: '编辑店铺', description: '允许编辑店铺', type: 'action' },
-      { id: '6', code: 'shop.delete', name: '删除店铺', description: '允许删除店铺', type: 'action' },
-      { id: '7', code: 'product.manage', name: '商品管理', description: '允许访问商品管理菜单', type: 'menu' },
-      { id: '8', code: 'inventory.manage', name: '库存管理', description: '允许访问库存管理菜单', type: 'menu' },
-      { id: '9', code: 'sales.manage', name: '销售管理', description: '允许访问销售管理菜单', type: 'menu' },
-      { id: '10', code: 'financial.manage', name: '财务管理', description: '允许访问财务管理菜单', type: 'menu' },
-      { id: '11', code: 'report.manage', name: '报表管理', description: '允许访问报表管理菜单', type: 'menu' },
-      { id: '12', code: 'user.manage', name: '用户管理', description: '允许访问用户管理菜单', type: 'menu' },
-      { id: '13', code: 'role.manage', name: '角色管理', description: '允许访问角色管理菜单', type: 'menu' },
-      { id: '14', code: 'permission.manage', name: '权限管理', description: '允许访问权限管理菜单', type: 'menu' },
-      { id: '15', code: 'system.manage', name: '系统设置', description: '允许访问系统设置菜单', type: 'menu' },
-    ]);
+    loadPermissions();
   }, []);
+
+  const loadPermissions = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const permissionsData = await getPermissions();
+      setPermissions(permissionsData);
+    } catch (err) {
+      console.error('Error loading permissions:', err);
+      setError('加载权限列表失败');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const showModal = (permission?: any) => {
+    if (permission) {
+      setEditingPermission(permission);
+      form.setFieldsValue(permission);
+    } else {
+      setEditingPermission(null);
+      form.resetFields();
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    form.resetFields();
+  };
+
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      if (editingPermission) {
+        await updatePermission(editingPermission.id, values);
+        await loadPermissions();
+        message.success('权限更新成功');
+      } else {
+        await createPermission(values);
+        await loadPermissions();
+        message.success('权限添加成功');
+      }
+      setIsModalOpen(false);
+      form.resetFields();
+    } catch (error) {
+      console.error('Error saving permission:', error);
+      message.error('操作失败，请重试');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePermission(id);
+      await loadPermissions();
+      message.success('权限删除成功');
+    } catch (error) {
+      console.error('Error deleting permission:', error);
+      message.error('删除失败，请重试');
+    }
+  };
 
   const columns = [
     { title: '权限编码', dataIndex: 'code', key: 'code' },
@@ -1696,20 +1793,78 @@ const PermissionPage: React.FC = () => {
         </Tag>
       ) 
     },
+    { 
+      title: '操作', 
+      key: 'action', 
+      render: (_: any, record: any) => (
+        <Space size="middle">
+          <Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>编辑</Button>
+          <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
+        </Space>
+      ) 
+    },
   ];
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">权限管理</h1>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>添加权限</Button>
       </div>
+      {error && <div className="text-red-500 mb-4">{error}</div>}
       <Table 
         columns={columns} 
         dataSource={permissions} 
         rowKey="id" 
         pagination={{ pageSize: 10 }}
+        loading={isLoading}
         style={{ marginBottom: 20 }}
       />
+      
+      {/* 模态框 */}
+      <Modal
+        title={editingPermission ? '编辑权限' : '添加权限'}
+        open={isModalOpen}
+        onCancel={handleCancel}
+        onOk={handleOk}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+        >
+          <Form.Item
+            name="code"
+            label="权限编码"
+            rules={[{ required: true, message: '请输入权限编码' }]}
+          >
+            <Input placeholder="请输入权限编码，如 dashboard.view" />
+          </Form.Item>
+          <Form.Item
+            name="name"
+            label="权限名称"
+            rules={[{ required: true, message: '请输入权限名称' }]}
+          >
+            <Input placeholder="请输入权限名称" />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="描述"
+          >
+            <Input placeholder="请输入权限描述" />
+          </Form.Item>
+          <Form.Item
+            name="type"
+            label="类型"
+            rules={[{ required: true, message: '请选择权限类型' }]}
+          >
+            <Select placeholder="请选择权限类型">
+              <Select.Option value="menu">菜单</Select.Option>
+              <Select.Option value="api">API</Select.Option>
+              <Select.Option value="action">操作</Select.Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

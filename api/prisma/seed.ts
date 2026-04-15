@@ -231,7 +231,9 @@ async function main() {
     { code: 'financial.manage', name: '财务管理', type: 'menu', description: '允许访问财务管理菜单' },
     { code: 'report.manage', name: '报表管理', type: 'menu', description: '允许访问报表管理菜单' },
     { code: 'user.manage', name: '用户管理', type: 'menu', description: '允许访问用户管理菜单' },
+    { code: 'system.manage', name: '系统管理', type: 'menu', description: '允许访问系统管理菜单' },
     { code: 'role.manage', name: '角色管理', type: 'menu', description: '允许访问角色管理菜单' },
+    { code: 'permission.manage', name: '权限管理', type: 'menu', description: '允许访问权限管理菜单' },
     
     // 操作权限
     { code: 'shop.view', name: '查看店铺', type: 'action', description: '允许查看店铺列表' },

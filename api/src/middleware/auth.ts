@@ -59,7 +59,7 @@ export const authorize = (roles: string[]) => {
   };
 };
 
-export const requirePermission = (permission: string) => {
+export const requirePermission = (permission: string | string[]) => {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       throw new ApiError(401, 'User not authenticated');
@@ -81,15 +81,48 @@ export const requirePermission = (permission: string) => {
       throw new ApiError(401, 'User not found');
     }
 
+    // 收集用户的所有权限
+    const userPermissions = new Set<string>();
+    user.roles.forEach(role => {
+      role.permissions.forEach(p => userPermissions.add(p.code));
+    });
+
     // 检查用户是否有所需权限
-    const hasPermission = user.roles.some(role => 
-      role.permissions.some(p => p.code === permission)
-    );
+    let hasPermission = false;
+    if (Array.isArray(permission)) {
+      // 检查是否拥有任意一个权限
+      hasPermission = permission.some(p => userPermissions.has(p));
+    } else {
+      // 检查是否拥有指定权限
+      hasPermission = userPermissions.has(permission);
+    }
 
     if (!hasPermission) {
-      throw new ApiError(403, `Permission ${permission} is required`);
+      const permissionStr = Array.isArray(permission) ? permission.join(' or ') : permission;
+      throw new ApiError(403, `Permission ${permissionStr} is required`);
     }
 
     next();
+  };
+};
+
+// 批量权限检查中间件
+export const requireAnyPermission = (permissions: string[]) => {
+  return requirePermission(permissions);
+};
+
+// 数据权限检查中间件
+export const requireDataPermission = (resourceType: string, action: string) => {
+  return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      throw new ApiError(401, 'User not authenticated');
+    }
+
+    // 构建数据权限代码
+    const permissionCode = `${resourceType}.${action}`;
+    
+    // 使用通用权限检查
+    const permissionMiddleware = requirePermission(permissionCode);
+    await permissionMiddleware(req, res, next);
   };
 };

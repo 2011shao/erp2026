@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticate, authorize } from '../middleware/auth';
-import { createRole, getRoles, getRole, updateRole, deleteRole } from '../controllers/roleController';
+import { createRole, getRoles, getRole, updateRole, deleteRole, getRolePermissions, updateRolePermissions } from '../controllers/roleController';
 
 const router = express.Router();
 
@@ -10,5 +10,9 @@ router.get('/roles/:id', authenticate, authorize(['admin']), getRole);
 router.post('/roles', authenticate, authorize(['admin']), createRole);
 router.put('/roles/:id', authenticate, authorize(['admin']), updateRole);
 router.delete('/roles/:id', authenticate, authorize(['admin']), deleteRole);
+
+// 角色权限管理API
+router.get('/roles/:id/permissions', authenticate, authorize(['admin']), getRolePermissions);
+router.put('/roles/:id/permissions', authenticate, authorize(['admin']), updateRolePermissions);
 
 export default router;

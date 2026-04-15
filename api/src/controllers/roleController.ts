@@ -36,11 +36,22 @@ export const getRoles = async (req: Request, res: Response, next: NextFunction) 
   try {
     const roles = await prisma.role.findMany({
       include: {
-        permissions: true,
+        rolePermissions: {
+          include: {
+            permission: true,
+          },
+        },
       },
     });
 
-    res.json({ success: true, data: roles });
+    // 转换数据格式，将rolePermissions转换为permissions
+    const formattedRoles = roles.map(role => ({
+      ...role,
+      permissions: role.rolePermissions.map(rp => rp.permission),
+      rolePermissions: undefined,
+    }));
+
+    res.json({ success: true, data: formattedRoles });
   } catch (error) {
     next(error);
   }
@@ -53,7 +64,11 @@ export const getRole = async (req: Request, res: Response, next: NextFunction) =
     const role = await prisma.role.findUnique({
       where: { id },
       include: {
-        permissions: true,
+        rolePermissions: {
+          include: {
+            permission: true,
+          },
+        },
       },
     });
 
@@ -61,7 +76,14 @@ export const getRole = async (req: Request, res: Response, next: NextFunction) =
       throw new ApiError(404, 'Role not found');
     }
 
-    res.json({ success: true, data: role });
+    // 转换数据格式，将rolePermissions转换为permissions
+    const formattedRole = {
+      ...role,
+      permissions: role.rolePermissions.map(rp => rp.permission),
+      rolePermissions: undefined,
+    };
+
+    res.json({ success: true, data: formattedRole });
   } catch (error) {
     next(error);
   }
@@ -102,11 +124,22 @@ export const updateRole = async (req: Request, res: Response, next: NextFunction
         isSystem: isSystem !== undefined ? isSystem : role.isSystem,
       },
       include: {
-        permissions: true,
+        rolePermissions: {
+          include: {
+            permission: true,
+          },
+        },
       },
     });
 
-    res.json({ success: true, data: updatedRole });
+    // 转换数据格式，将rolePermissions转换为permissions
+    const formattedRole = {
+      ...updatedRole,
+      permissions: updatedRole.rolePermissions.map(rp => rp.permission),
+      rolePermissions: undefined,
+    };
+
+    res.json({ success: true, data: formattedRole });
   } catch (error) {
     next(error);
   }
@@ -142,6 +175,107 @@ export const deleteRole = async (req: Request, res: Response, next: NextFunction
     });
 
     res.json({ success: true, message: 'Role deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getRolePermissions = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    const role = await prisma.role.findUnique({
+      where: { id },
+      include: {
+        rolePermissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
+    });
+
+    if (!role) {
+      throw new ApiError(404, 'Role not found');
+    }
+
+    // 提取权限列表
+    const permissions = role.rolePermissions.map(rp => rp.permission);
+
+    res.json({ success: true, data: permissions });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateRolePermissions = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { permissionIds } = req.body;
+
+    if (!permissionIds || !Array.isArray(permissionIds)) {
+      throw new ApiError(400, 'Permission IDs must be provided as an array');
+    }
+
+    // 检查角色是否存在
+    const role = await prisma.role.findUnique({
+      where: { id },
+    });
+
+    if (!role) {
+      throw new ApiError(404, 'Role not found');
+    }
+
+    // 检查所有权限是否存在
+    const permissions = await prisma.permission.findMany({
+      where: {
+        id: {
+          in: permissionIds,
+        },
+      },
+    });
+
+    if (permissions.length !== permissionIds.length) {
+      throw new ApiError(400, 'Some permissions do not exist');
+    }
+
+    // 先删除现有的权限分配
+    await prisma.rolePermission.deleteMany({
+      where: {
+        roleId: id,
+      },
+    });
+
+    // 重新分配权限
+    if (permissionIds.length > 0) {
+      await prisma.rolePermission.createMany({
+        data: permissionIds.map(permissionId => ({
+          roleId: id,
+          permissionId,
+        })),
+      });
+    }
+
+    // 获取更新后的角色及其权限
+    const updatedRole = await prisma.role.findUnique({
+      where: { id },
+      include: {
+        rolePermissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
+    });
+
+    // 转换数据格式，将rolePermissions转换为permissions
+    const formattedRole = {
+      ...updatedRole!,
+      permissions: updatedRole!.rolePermissions.map(rp => rp.permission),
+      rolePermissions: undefined,
+    };
+
+    res.json({ success: true, data: formattedRole });
   } catch (error) {
     next(error);
   }
