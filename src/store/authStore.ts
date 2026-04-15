@@ -41,6 +41,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (username: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
+          console.log('Login request:', { username, password });
           const response = await fetch('http://localhost:8000/api/users/login', {
             method: 'POST',
             headers: {
@@ -48,9 +49,11 @@ export const useAuthStore = create<AuthState>()(
             },
             body: JSON.stringify({ username, password }),
           });
-
+          console.log('Login response status:', response.status);
           if (!response.ok) {
-            throw new Error('Login failed');
+            const errorData = await response.json().catch(() => ({}));
+            console.log('Login error data:', errorData);
+            throw new Error('Login failed: ' + (errorData.message || 'Invalid credentials'));
           }
 
           const data = await response.json();
