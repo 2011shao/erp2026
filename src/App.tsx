@@ -19,8 +19,14 @@ const App: React.FC = () => {
       setIsLoginModalOpen(false);
       form.resetFields();
       message.success('登录成功');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login error:', err);
+      // 表单验证失败，显示错误消息
+      if (err.errorFields && err.errorFields.length > 0) {
+        message.error(err.errorFields[0].errors[0]);
+      } else {
+        message.error('登录失败，请检查用户名和密码');
+      }
     }
   };
 
