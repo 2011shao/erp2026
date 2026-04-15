@@ -1467,8 +1467,11 @@ const UserPage: React.FC = () => {
 const RolePage: React.FC = () => {
   const [roles, setRoles] = React.useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isPermissionModalOpen, setIsPermissionModalOpen] = React.useState(false);
   const [editingRole, setEditingRole] = React.useState<any>(null);
+  const [selectedRole, setSelectedRole] = React.useState<any>(null);
   const [form] = Form.useForm();
+  const [permissionForm] = Form.useForm();
 
   React.useEffect(() => {
     // 模拟获取角色列表
@@ -1514,6 +1517,26 @@ const RolePage: React.FC = () => {
     message.success('角色删除成功');
   };
 
+  const handlePermissionManage = (role: any) => {
+    setSelectedRole(role);
+    permissionForm.setFieldsValue({ permissions: role.permissions || [] });
+    setIsPermissionModalOpen(true);
+  };
+
+  const handlePermissionCancel = () => {
+    setIsPermissionModalOpen(false);
+    permissionForm.resetFields();
+  };
+
+  const handlePermissionOk = () => {
+    permissionForm.validateFields().then(values => {
+      setRoles(roles.map(r => r.id === selectedRole.id ? { ...r, permissions: values.permissions } : r));
+      message.success('权限更新成功');
+      setIsPermissionModalOpen(false);
+      permissionForm.resetFields();
+    });
+  };
+
   const columns = [
     { title: '角色名称', dataIndex: 'name', key: 'name' },
     { title: '描述', dataIndex: 'description', key: 'description' },
@@ -1537,7 +1560,7 @@ const RolePage: React.FC = () => {
           {!record.isSystem && (
             <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
           )}
-          <Button icon={<EyeOutlined />}>权限管理</Button>
+          <Button icon={<EyeOutlined />} onClick={() => handlePermissionManage(record)}>权限管理</Button>
         </Space>
       ) 
     },
@@ -1580,6 +1603,49 @@ const RolePage: React.FC = () => {
             label="描述"
           >
             <Input placeholder="请输入角色描述" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 权限管理模态框 */}
+      <Modal
+        title={`${selectedRole?.name} - 权限管理`}
+        open={isPermissionModalOpen}
+        onCancel={handlePermissionCancel}
+        onOk={handlePermissionOk}
+        width={600}
+      >
+        <Form
+          form={permissionForm}
+          layout="vertical"
+        >
+          <Form.Item
+            name="permissions"
+            label="权限列表"
+            rules={[{ required: true, message: '请选择至少一个权限' }]}
+          >
+            <Select
+              mode="multiple"
+              placeholder="请选择权限"
+              style={{ width: '100%' }}
+              options={[
+                { value: 'dashboard.view', label: '查看首页' },
+                { value: 'shop.manage', label: '店铺管理' },
+                { value: 'shop.view', label: '查看店铺' },
+                { value: 'shop.create', label: '创建店铺' },
+                { value: 'shop.edit', label: '编辑店铺' },
+                { value: 'shop.delete', label: '删除店铺' },
+                { value: 'product.manage', label: '商品管理' },
+                { value: 'inventory.manage', label: '库存管理' },
+                { value: 'sales.manage', label: '销售管理' },
+                { value: 'financial.manage', label: '财务管理' },
+                { value: 'report.manage', label: '报表管理' },
+                { value: 'user.manage', label: '用户管理' },
+                { value: 'role.manage', label: '角色管理' },
+                { value: 'permission.manage', label: '权限管理' },
+                { value: 'system.manage', label: '系统设置' },
+              ]}
+            />
           </Form.Item>
         </Form>
       </Modal>
