@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from '../api';
 
 interface Role {
   id: string;
@@ -18,18 +18,11 @@ interface Permission {
   type: string;
 }
 
-const API_BASE_URL = '/api';
-
 // 获取角色列表
 export const getRoles = async (): Promise<Role[]> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.get(`${API_BASE_URL}/roles`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data.data;
+    const response = await api.get('/roles');
+    return response.data;
   } catch (error) {
     console.error('Error fetching roles:', error);
     throw error;
@@ -39,13 +32,8 @@ export const getRoles = async (): Promise<Role[]> => {
 // 获取单个角色
 export const getRole = async (id: string): Promise<Role> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.get(`${API_BASE_URL}/roles/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data.data;
+    const response = await api.get(`/roles/${id}`);
+    return response.data;
   } catch (error) {
     console.error(`Error fetching role ${id}:`, error);
     throw error;
@@ -55,14 +43,8 @@ export const getRole = async (id: string): Promise<Role> => {
 // 创建角色
 export const createRole = async (roleData: Omit<Role, 'id' | 'createdAt' | 'updatedAt'>): Promise<Role> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.post(`${API_BASE_URL}/roles`, roleData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    return response.data.data;
+    const response = await api.post('/roles', roleData);
+    return response.data;
   } catch (error) {
     console.error('Error creating role:', error);
     throw error;
@@ -72,14 +54,8 @@ export const createRole = async (roleData: Omit<Role, 'id' | 'createdAt' | 'upda
 // 更新角色
 export const updateRole = async (id: string, roleData: Partial<Role>): Promise<Role> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.put(`${API_BASE_URL}/roles/${id}`, roleData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    return response.data.data;
+    const response = await api.put(`/roles/${id}`, roleData);
+    return response.data;
   } catch (error) {
     console.error(`Error updating role ${id}:`, error);
     throw error;
@@ -89,12 +65,7 @@ export const updateRole = async (id: string, roleData: Partial<Role>): Promise<R
 // 删除角色
 export const deleteRole = async (id: string): Promise<void> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    await axios.delete(`${API_BASE_URL}/roles/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    await api.delete(`/roles/${id}`);
   } catch (error) {
     console.error(`Error deleting role ${id}:`, error);
     throw error;
@@ -104,13 +75,8 @@ export const deleteRole = async (id: string): Promise<void> => {
 // 获取角色权限
 export const getRolePermissions = async (roleId: string): Promise<Permission[]> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.get(`${API_BASE_URL}/roles/${roleId}/permissions`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data.data;
+    const response = await api.get(`/roles/${roleId}/permissions`);
+    return response.data;
   } catch (error) {
     console.error(`Error fetching permissions for role ${roleId}:`, error);
     throw error;
@@ -120,17 +86,8 @@ export const getRolePermissions = async (roleId: string): Promise<Permission[]> 
 // 更新角色权限
 export const updateRolePermissions = async (roleId: string, permissionIds: string[]): Promise<Role> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.put(`${API_BASE_URL}/roles/${roleId}/permissions`, 
-      { permissionIds },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    return response.data.data;
+    const response = await api.put(`/roles/${roleId}/permissions`, { permissionIds });
+    return response.data;
   } catch (error) {
     console.error(`Error updating permissions for role ${roleId}:`, error);
     throw error;

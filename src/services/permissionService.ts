@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from '../api';
 
 interface Permission {
   id: string;
@@ -10,18 +10,11 @@ interface Permission {
   updatedAt?: string;
 }
 
-const API_BASE_URL = '/api';
-
 // 获取权限列表
 export const getPermissions = async (): Promise<Permission[]> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.get(`${API_BASE_URL}/permissions`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data.data;
+    const response = await api.get('/permissions');
+    return response.data;
   } catch (error) {
     console.error('Error fetching permissions:', error);
     throw error;
@@ -31,13 +24,8 @@ export const getPermissions = async (): Promise<Permission[]> => {
 // 获取单个权限
 export const getPermission = async (id: string): Promise<Permission> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.get(`${API_BASE_URL}/permissions/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data.data;
+    const response = await api.get(`/permissions/${id}`);
+    return response.data;
   } catch (error) {
     console.error(`Error fetching permission ${id}:`, error);
     throw error;
@@ -47,14 +35,8 @@ export const getPermission = async (id: string): Promise<Permission> => {
 // 创建权限
 export const createPermission = async (permissionData: Omit<Permission, 'id' | 'createdAt' | 'updatedAt'>): Promise<Permission> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.post(`${API_BASE_URL}/permissions`, permissionData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    return response.data.data;
+    const response = await api.post('/permissions', permissionData);
+    return response.data;
   } catch (error) {
     console.error('Error creating permission:', error);
     throw error;
@@ -64,14 +46,8 @@ export const createPermission = async (permissionData: Omit<Permission, 'id' | '
 // 更新权限
 export const updatePermission = async (id: string, permissionData: Partial<Permission>): Promise<Permission> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.put(`${API_BASE_URL}/permissions/${id}`, permissionData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    return response.data.data;
+    const response = await api.put(`/permissions/${id}`, permissionData);
+    return response.data;
   } catch (error) {
     console.error(`Error updating permission ${id}:`, error);
     throw error;
@@ -81,12 +57,7 @@ export const updatePermission = async (id: string, permissionData: Partial<Permi
 // 删除权限
 export const deletePermission = async (id: string): Promise<void> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    await axios.delete(`${API_BASE_URL}/permissions/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    await api.delete(`/permissions/${id}`);
   } catch (error) {
     console.error(`Error deleting permission ${id}:`, error);
     throw error;
@@ -96,17 +67,8 @@ export const deletePermission = async (id: string): Promise<void> => {
 // 为角色分配权限
 export const assignPermissionsToRole = async (roleId: string, permissionIds: string[]): Promise<any> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.post(`${API_BASE_URL}/roles/${roleId}/permissions`, 
-      { permissionIds },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    return response.data.data;
+    const response = await api.post(`/roles/${roleId}/permissions`, { permissionIds });
+    return response.data;
   } catch (error) {
     console.error(`Error assigning permissions to role ${roleId}:`, error);
     throw error;
@@ -116,13 +78,8 @@ export const assignPermissionsToRole = async (roleId: string, permissionIds: str
 // 从角色移除权限
 export const removePermissionFromRole = async (roleId: string, permissionId: string): Promise<any> => {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.delete(`${API_BASE_URL}/roles/${roleId}/permissions/${permissionId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data.data;
+    const response = await api.delete(`/roles/${roleId}/permissions/${permissionId}`);
+    return response.data;
   } catch (error) {
     console.error(`Error removing permission ${permissionId} from role ${roleId}:`, error);
     throw error;

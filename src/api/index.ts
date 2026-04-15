@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { useDataCacheStore, generateCacheKey } from '../store/dataCacheStore';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api';
 
 interface ApiResponse<T = any> {
   success: boolean;
@@ -45,7 +46,7 @@ class ApiClient {
 
     this.client.interceptors.response.use(
       (response: AxiosResponse<ApiResponse>) => {
-        return response.data;
+        return response;
       },
       (error) => {
         const errorMessage = error.response?.data?.error || error.message || 'Request failed';
@@ -68,23 +69,70 @@ class ApiClient {
     return this.token;
   }
 
+  // 生成缓存键
+  private generateCacheKey(url: string, params?: any): string {
+    const path = url.replace(/^\//, '');
+    return generateCacheKey(path, params);
+  }
+
+  // 清除相关缓存
+  private clearCacheByPattern(pattern: string) {
+    const { cache } = useDataCacheStore.getState();
+    Object.keys(cache).forEach(key => {
+      if (key.startsWith(pattern)) {
+        useDataCacheStore.getState().clearCache(key);
+      }
+    });
+  }
+
   async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    return this.client.get(url, config);
+    // 生成缓存键
+    const cacheKey = this.generateCacheKey(url, config?.params);
+    
+    // 尝试从缓存获取
+    const cachedData = useDataCacheStore.getState().getCache(cacheKey);
+    if (cachedData) {
+      return cachedData as ApiResponse<T>;
+    }
+    
+    // 发起请求
+    const response = await this.client.get(url, config);
+    
+    // 缓存响应数据
+    useDataCacheStore.getState().setCache(cacheKey, response.data);
+    
+    return response.data as ApiResponse<T>;
   }
 
   async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    // 清除相关缓存
+    const path = url.replace(/^\//, '');
+    this.clearCacheByPattern(path.split('/')[0]);
+    
     return this.client.post(url, data, config);
   }
 
   async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    // 清除相关缓存
+    const path = url.replace(/^\//, '');
+    this.clearCacheByPattern(path.split('/')[0]);
+    
     return this.client.put(url, data, config);
   }
 
   async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    // 清除相关缓存
+    const path = url.replace(/^\//, '');
+    this.clearCacheByPattern(path.split('/')[0]);
+    
     return this.client.patch(url, data, config);
   }
 
   async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    // 清除相关缓存
+    const path = url.replace(/^\//, '');
+    this.clearCacheByPattern(path.split('/')[0]);
+    
     return this.client.delete(url, config);
   }
 }

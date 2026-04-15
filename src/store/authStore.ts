@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { authApi } from '../api';
 
 interface User {
   id: string;
@@ -42,22 +43,10 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           console.log('Login request:', { username, password });
-          const response = await fetch('/api/users/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username, password }),
-          });
-          console.log('Login response status:', response.status);
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.log('Login error data:', errorData);
-            throw new Error('Login failed: ' + (errorData.message || 'Invalid credentials'));
-          }
-
-          const data = await response.json();
-          const { accessToken, user } = data.data;
+          const response = await authApi.login({ username, password });
+          console.log('Login response:', response);
+          
+          const { accessToken, user } = response.data;
 
           // 存储token到localStorage
           localStorage.setItem('accessToken', accessToken);
@@ -88,8 +77,9 @@ export const useAuthStore = create<AuthState>()(
           }
 
           set({ user, isAuthenticated: true, isLoading: false });
-        } catch (error) {
-          set({ error: 'Invalid credentials', isLoading: false });
+        } catch (error: any) {
+          console.error('Login error:', error);
+          set({ error: error.message || 'Invalid credentials', isLoading: false });
           throw error; // 抛出异常，让handleLogin函数捕获
         }
       },
