@@ -220,6 +220,170 @@ async function main() {
 
   console.log('✅ 创建示例库存变动记录');
 
+  // 创建权限数据
+  const permissions = [
+    // 菜单权限
+    { code: 'dashboard.view', name: '查看首页', type: 'menu', description: '允许访问首页' },
+    { code: 'shop.manage', name: '店铺管理', type: 'menu', description: '允许访问店铺管理菜单' },
+    { code: 'product.manage', name: '商品管理', type: 'menu', description: '允许访问商品管理菜单' },
+    { code: 'inventory.manage', name: '库存管理', type: 'menu', description: '允许访问库存管理菜单' },
+    { code: 'sales.manage', name: '销售管理', type: 'menu', description: '允许访问销售管理菜单' },
+    { code: 'financial.manage', name: '财务管理', type: 'menu', description: '允许访问财务管理菜单' },
+    { code: 'report.manage', name: '报表管理', type: 'menu', description: '允许访问报表管理菜单' },
+    { code: 'user.manage', name: '用户管理', type: 'menu', description: '允许访问用户管理菜单' },
+    { code: 'role.manage', name: '角色管理', type: 'menu', description: '允许访问角色管理菜单' },
+    
+    // 操作权限
+    { code: 'shop.view', name: '查看店铺', type: 'action', description: '允许查看店铺列表' },
+    { code: 'shop.create', name: '创建店铺', type: 'action', description: '允许创建店铺' },
+    { code: 'shop.edit', name: '编辑店铺', type: 'action', description: '允许编辑店铺' },
+    { code: 'shop.delete', name: '删除店铺', type: 'action', description: '允许删除店铺' },
+    { code: 'product.view', name: '查看商品', type: 'action', description: '允许查看商品列表' },
+    { code: 'product.create', name: '创建商品', type: 'action', description: '允许创建商品' },
+    { code: 'product.edit', name: '编辑商品', type: 'action', description: '允许编辑商品' },
+    { code: 'product.delete', name: '删除商品', type: 'action', description: '允许删除商品' },
+    { code: 'inventory.view', name: '查看库存', type: 'action', description: '允许查看库存列表' },
+    { code: 'inventory.adjust', name: '调整库存', type: 'action', description: '允许调整库存' },
+    { code: 'sales.view', name: '查看销售', type: 'action', description: '允许查看销售订单' },
+    { code: 'sales.create', name: '创建销售', type: 'action', description: '允许创建销售订单' },
+    { code: 'sales.edit', name: '编辑销售', type: 'action', description: '允许编辑销售订单' },
+    { code: 'financial.view', name: '查看财务', type: 'action', description: '允许查看财务记录' },
+    { code: 'financial.create', name: '创建财务', type: 'action', description: '允许创建财务记录' },
+    { code: 'financial.delete', name: '删除财务', type: 'action', description: '允许删除财务记录' },
+    { code: 'report.view', name: '查看报表', type: 'action', description: '允许查看报表' },
+    { code: 'user.view', name: '查看用户', type: 'action', description: '允许查看用户列表' },
+    { code: 'user.create', name: '创建用户', type: 'action', description: '允许创建用户' },
+    { code: 'user.edit', name: '编辑用户', type: 'action', description: '允许编辑用户' },
+    { code: 'user.delete', name: '删除用户', type: 'action', description: '允许删除用户' },
+    { code: 'role.view', name: '查看角色', type: 'action', description: '允许查看角色列表' },
+    { code: 'role.create', name: '创建角色', type: 'action', description: '允许创建角色' },
+    { code: 'role.edit', name: '编辑角色', type: 'action', description: '允许编辑角色' },
+    { code: 'role.delete', name: '删除角色', type: 'action', description: '允许删除角色' },
+  ];
+
+  for (const permission of permissions) {
+    await prisma.permission.upsert({
+      where: { code: permission.code },
+      update: {},
+      create: permission,
+    });
+  }
+
+  console.log('✅ 创建权限数据');
+
+  // 创建角色数据
+  const adminRole = await prisma.role.upsert({
+    where: { name: 'admin' },
+    update: {},
+    create: {
+      name: 'admin',
+      description: '超级管理员，拥有所有权限',
+      isSystem: true,
+    },
+  });
+
+  const managerRole = await prisma.role.upsert({
+    where: { name: 'manager' },
+    update: {},
+    create: {
+      name: 'manager',
+      description: '店长，拥有本店铺的所有权限',
+      isSystem: true,
+    },
+  });
+
+  const staffRole = await prisma.role.upsert({
+    where: { name: 'staff' },
+    update: {},
+    create: {
+      name: 'staff',
+      description: '员工，拥有基础操作权限',
+      isSystem: true,
+    },
+  });
+
+  console.log('✅ 创建角色数据');
+
+  // 为管理员角色分配所有权限
+  const allPermissions = await prisma.permission.findMany();
+  for (const permission of allPermissions) {
+    await prisma.rolePermission.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: adminRole.id,
+          permissionId: permission.id,
+        },
+      },
+      update: {},
+      create: {
+        roleId: adminRole.id,
+        permissionId: permission.id,
+      },
+    });
+  }
+
+  // 为店长角色分配基础权限
+  const managerPermissions = allPermissions.filter(p => 
+    p.code.includes('view') || 
+    p.code.includes('create') || 
+    p.code.includes('edit') ||
+    p.code.includes('manage')
+  );
+  for (const permission of managerPermissions) {
+    await prisma.rolePermission.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: managerRole.id,
+          permissionId: permission.id,
+        },
+      },
+      update: {},
+      create: {
+        roleId: managerRole.id,
+        permissionId: permission.id,
+      },
+    });
+  }
+
+  // 为员工角色分配基础查看权限
+  const staffPermissions = allPermissions.filter(p => 
+    p.code.includes('view') || 
+    p.code.includes('manage') ||
+    p.code.includes('create')
+  );
+  for (const permission of staffPermissions) {
+    await prisma.rolePermission.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: staffRole.id,
+          permissionId: permission.id,
+        },
+      },
+      update: {},
+      create: {
+        roleId: staffRole.id,
+        permissionId: permission.id,
+      },
+    });
+  }
+
+  // 为管理员用户分配admin角色
+  await prisma.userRole.upsert({
+    where: {
+      userId_roleId: {
+        userId: adminUser.id,
+        roleId: adminRole.id,
+      },
+    },
+    update: {},
+    create: {
+      userId: adminUser.id,
+      roleId: adminRole.id,
+    },
+  });
+
+  console.log('✅ 分配角色权限');
+
   console.log('\n🎉 数据库初始化完成！');
   console.log('\n📝 登录信息:');
   console.log('   用户名: admin');

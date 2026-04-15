@@ -8,6 +8,8 @@ import inventoryRoutes from './routes/inventoryRoutes';
 import salesRoutes from './routes/salesRoutes';
 import financialRoutes from './routes/financialRoutes';
 import reportRoutes from './routes/reportRoutes';
+import roleRoutes from './routes/roleRoutes';
+import permissionRoutes from './routes/permissionRoutes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 // 加载环境变量
@@ -34,6 +36,8 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/financial', financialRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api', roleRoutes);
+app.use('/api', permissionRoutes);
 
 // 404 处理
 app.use(notFoundHandler);

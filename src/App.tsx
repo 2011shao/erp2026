@@ -1,18 +1,55 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout, Menu, Button, Table, Modal, Form, Input, Select, Card, Statistic, Row, Col, Tag, Space, message } from 'antd';
 import { Link, Routes, Route } from 'react-router-dom';
-import { HomeOutlined, ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarOutlined, BarChartOutlined, UserOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { HomeOutlined, ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarOutlined, BarChartOutlined, UserOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SettingOutlined } from '@ant-design/icons';
+import { useAuthStore, filterMenuByPermission } from './store/authStore';
+import { menuConfig } from './config/menu';
 
 const { Header, Content, Sider } = Layout;
 
 const App: React.FC = () => {
+  const { user, isAuthenticated, login, logout, isLoading, error, clearError } = useAuthStore();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [form] = Form.useForm();
+
+  const handleLogin = async () => {
+    try {
+      const values = await form.validateFields();
+      await login(values.username, values.password);
+      setIsLoginModalOpen(false);
+      form.resetFields();
+      message.success('登录成功');
+    } catch (err) {
+      console.error('Login error:', err);
+    }
+  };
+
+  const filteredMenu = filterMenuByPermission(menuConfig);
+
+  const menuItems = filteredMenu.map(item => ({
+    key: item.key,
+    icon: item.icon,
+    label: <Link to={item.path}>{item.label}</Link>,
+    children: item.children?.map(child => ({
+      key: child.key,
+      icon: child.icon,
+      label: <Link to={child.path}>{child.label}</Link>
+    }))
+  }));
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#001529' }}>
         <div style={{ color: 'white', fontSize: '18px', fontWeight: 'bold' }}>多门店 ERP 系统</div>
         <div>
-          <Button type="primary" style={{ marginRight: 8 }}>登录</Button>
-          <Button>注册</Button>
+          {isAuthenticated ? (
+            <>
+              <span style={{ color: 'white', marginRight: 16 }}>欢迎, {user?.username}</span>
+              <Button onClick={logout}>退出登录</Button>
+            </>
+          ) : (
+            <Button type="primary" onClick={() => setIsLoginModalOpen(true)}>登录</Button>
+          )}
         </div>
       </Header>
       <Layout>
@@ -20,18 +57,39 @@ const App: React.FC = () => {
           <Menu
             mode="inline"
             style={{ height: '100%', borderRight: 0 }}
-            items={[
-              { key: '1', icon: <HomeOutlined />, label: <Link to="/">首页</Link> },
-              { key: '2', icon: <ShopOutlined />, label: <Link to="/shops">店铺管理</Link> },
-              { key: '3', icon: <ProductOutlined />, label: <Link to="/products">商品管理</Link> },
-              { key: '4', icon: <StockOutlined />, label: <Link to="/inventory">库存管理</Link> },
-              { key: '5', icon: <ShoppingOutlined />, label: <Link to="/sales">销售管理</Link> },
-              { key: '6', icon: <DollarOutlined />, label: <Link to="/financial">财务管理</Link> },
-              { key: '7', icon: <BarChartOutlined />, label: <Link to="/reports">报表分析</Link> },
-              { key: '8', icon: <UserOutlined />, label: <Link to="/users">用户管理</Link> },
-            ]}
+            items={menuItems}
           />
         </Sider>
+        
+        {/* 登录模态框 */}
+        <Modal
+          title="用户登录"
+          open={isLoginModalOpen}
+          onCancel={() => setIsLoginModalOpen(false)}
+          onOk={handleLogin}
+          confirmLoading={isLoading}
+        >
+          {error && <div className="text-red-500 mb-4">{error}</div>}
+          <Form
+            form={form}
+            layout="vertical"
+          >
+            <Form.Item
+              name="username"
+              label="用户名"
+              rules={[{ required: true, message: '请输入用户名' }]}
+            >
+              <Input placeholder="请输入用户名" />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              label="密码"
+              rules={[{ required: true, message: '请输入密码' }]}
+            >
+              <Input.Password placeholder="请输入密码" />
+            </Form.Item>
+          </Form>
+        </Modal>
         <Layout style={{ padding: '24px' }}>
           <Content style={{ backgroundColor: 'white', padding: '24px', minHeight: 280 }}>
             <Routes>
@@ -43,6 +101,8 @@ const App: React.FC = () => {
               <Route path="/financial" element={<FinancialPage />} />
               <Route path="/reports" element={<ReportPage />} />
               <Route path="/users" element={<UserPage />} />
+              <Route path="/settings/roles" element={<RolePage />} />
+              <Route path="/settings/permissions" element={<PermissionPage />} />
             </Routes>
           </Content>
         </Layout>
@@ -1394,6 +1454,190 @@ const UserPage: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+    </div>
+  );
+};
+
+const RolePage: React.FC = () => {
+  const [roles, setRoles] = React.useState<any[]>([]);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [editingRole, setEditingRole] = React.useState<any>(null);
+  const [form] = Form.useForm();
+
+  React.useEffect(() => {
+    // 模拟获取角色列表
+    setRoles([
+      { id: '1', name: 'admin', description: '超级管理员', isSystem: true, permissions: [] },
+      { id: '2', name: 'manager', description: '店长', isSystem: true, permissions: [] },
+      { id: '3', name: 'staff', description: '员工', isSystem: true, permissions: [] },
+    ]);
+  }, []);
+
+  const showModal = (role?: any) => {
+    if (role) {
+      setEditingRole(role);
+      form.setFieldsValue(role);
+    } else {
+      setEditingRole(null);
+      form.resetFields();
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    form.resetFields();
+  };
+
+  const handleOk = () => {
+    form.validateFields().then(values => {
+      if (editingRole) {
+        setRoles(roles.map(role => role.id === editingRole.id ? { ...role, ...values } : role));
+        message.success('角色更新成功');
+      } else {
+        setRoles([...roles, { id: String(roles.length + 1), ...values, isSystem: false, permissions: [] }]);
+        message.success('角色添加成功');
+      }
+      setIsModalOpen(false);
+      form.resetFields();
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    setRoles(roles.filter(role => role.id !== id));
+    message.success('角色删除成功');
+  };
+
+  const columns = [
+    { title: '角色名称', dataIndex: 'name', key: 'name' },
+    { title: '描述', dataIndex: 'description', key: 'description' },
+    { 
+      title: '类型', 
+      key: 'isSystem', 
+      render: (_: any, record: any) => (
+        <Tag color={record.isSystem ? 'blue' : 'green'}>
+          {record.isSystem ? '系统内置' : '自定义'}
+        </Tag>
+      ) 
+    },
+    { 
+      title: '操作', 
+      key: 'action', 
+      render: (_: any, record: any) => (
+        <Space size="middle">
+          {!record.isSystem && (
+            <Button type="primary" icon={<EditOutlined />} onClick={() => showModal(record)}>编辑</Button>
+          )}
+          {!record.isSystem && (
+            <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
+          )}
+          <Button icon={<EyeOutlined />}>权限管理</Button>
+        </Space>
+      ) 
+    },
+  ];
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">角色管理</h1>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()}>添加角色</Button>
+      </div>
+      <Table 
+        columns={columns} 
+        dataSource={roles} 
+        rowKey="id" 
+        pagination={{ pageSize: 10 }}
+        style={{ marginBottom: 20 }}
+      />
+      
+      {/* 模态框 */}
+      <Modal
+        title={editingRole ? '编辑角色' : '添加角色'}
+        open={isModalOpen}
+        onCancel={handleCancel}
+        onOk={handleOk}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+        >
+          <Form.Item
+            name="name"
+            label="角色名称"
+            rules={[{ required: true, message: '请输入角色名称' }]}
+          >
+            <Input placeholder="请输入角色名称" />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="描述"
+          >
+            <Input placeholder="请输入角色描述" />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+};
+
+const PermissionPage: React.FC = () => {
+  const [permissions, setPermissions] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    // 模拟获取权限列表
+    setPermissions([
+      { id: '1', code: 'dashboard.view', name: '查看首页', description: '允许访问首页', type: 'menu' },
+      { id: '2', code: 'shop.manage', name: '店铺管理', description: '允许访问店铺管理菜单', type: 'menu' },
+      { id: '3', code: 'shop.view', name: '查看店铺', description: '允许查看店铺列表', type: 'action' },
+      { id: '4', code: 'shop.create', name: '创建店铺', description: '允许创建店铺', type: 'action' },
+      { id: '5', code: 'shop.edit', name: '编辑店铺', description: '允许编辑店铺', type: 'action' },
+      { id: '6', code: 'shop.delete', name: '删除店铺', description: '允许删除店铺', type: 'action' },
+      { id: '7', code: 'product.manage', name: '商品管理', description: '允许访问商品管理菜单', type: 'menu' },
+      { id: '8', code: 'inventory.manage', name: '库存管理', description: '允许访问库存管理菜单', type: 'menu' },
+      { id: '9', code: 'sales.manage', name: '销售管理', description: '允许访问销售管理菜单', type: 'menu' },
+      { id: '10', code: 'financial.manage', name: '财务管理', description: '允许访问财务管理菜单', type: 'menu' },
+      { id: '11', code: 'report.manage', name: '报表管理', description: '允许访问报表管理菜单', type: 'menu' },
+      { id: '12', code: 'user.manage', name: '用户管理', description: '允许访问用户管理菜单', type: 'menu' },
+      { id: '13', code: 'role.manage', name: '角色管理', description: '允许访问角色管理菜单', type: 'menu' },
+      { id: '14', code: 'permission.manage', name: '权限管理', description: '允许访问权限管理菜单', type: 'menu' },
+      { id: '15', code: 'system.manage', name: '系统设置', description: '允许访问系统设置菜单', type: 'menu' },
+    ]);
+  }, []);
+
+  const columns = [
+    { title: '权限编码', dataIndex: 'code', key: 'code' },
+    { title: '权限名称', dataIndex: 'name', key: 'name' },
+    { title: '描述', dataIndex: 'description', key: 'description' },
+    { 
+      title: '类型', 
+      key: 'type', 
+      render: (_: any, record: any) => (
+        <Tag color={
+          record.type === 'menu' ? 'blue' :
+          record.type === 'api' ? 'green' :
+          'orange'
+        }>
+          {record.type === 'menu' ? '菜单' :
+           record.type === 'api' ? 'API' :
+           '操作'}
+        </Tag>
+      ) 
+    },
+  ];
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">权限管理</h1>
+      </div>
+      <Table 
+        columns={columns} 
+        dataSource={permissions} 
+        rowKey="id" 
+        pagination={{ pageSize: 10 }}
+        style={{ marginBottom: 20 }}
+      />
     </div>
   );
 };

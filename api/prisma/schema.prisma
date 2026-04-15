@@ -19,6 +19,7 @@ model User {
   shopId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  userRoles UserRole[]
 }
 
 // 店铺模型
@@ -99,4 +100,48 @@ model FinancialRecord {
   category  String
   description String
   createdAt DateTime @default(now())
+}
+
+// 权限表
+model Permission {
+  id          String   @id @default(cuid())
+  code        String   @unique // 权限编码
+  name        String   // 权限名称
+  description String?  // 权限描述
+  type        String   // 权限类型：menu, api, action
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  rolePermissions RolePermission[]
+}
+
+// 角色表
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // 角色名称
+  description String?  // 角色描述
+  isSystem    Boolean  @default(false) // 是否系统内置角色
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  rolePermissions RolePermission[]
+  userRoles UserRole[]
+}
+
+// 角色权限关联表
+model RolePermission {
+  id           String   @id @default(cuid())
+  roleId       String
+  permissionId String
+  role         Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  @@unique([roleId, permissionId])
+}
+
+// 用户角色关联表
+model UserRole {
+  id     String   @id @default(cuid())
+  userId String
+  roleId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  @@unique([userId, roleId])
 }

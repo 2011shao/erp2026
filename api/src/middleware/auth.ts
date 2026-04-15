@@ -58,3 +58,38 @@ export const authorize = (roles: string[]) => {
     next();
   };
 };
+
+export const requirePermission = (permission: string) => {
+  return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      throw new ApiError(401, 'User not authenticated');
+    }
+
+    // 获取用户的所有角色
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: {
+        roles: {
+          include: {
+            permissions: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new ApiError(401, 'User not found');
+    }
+
+    // 检查用户是否有所需权限
+    const hasPermission = user.roles.some(role => 
+      role.permissions.some(p => p.code === permission)
+    );
+
+    if (!hasPermission) {
+      throw new ApiError(403, `Permission ${permission} is required`);
+    }
+
+    next();
+  };
+};

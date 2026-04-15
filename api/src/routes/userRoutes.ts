@@ -220,4 +220,157 @@ router.delete('/:id', authenticate, authorize(['admin']), async (req, res, next)
   }
 });
 
+// 用户角色管理API
+router.get('/:id/roles', authenticate, authorize(['admin']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        roles: true,
+      },
+    });
+
+    if (!user) {
+      throw new ApiError(404, 'User not found');
+    }
+
+    res.json({
+      success: true,
+      data: user.roles,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/:id/roles', authenticate, authorize(['admin']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { roleIds } = req.body;
+
+    if (!roleIds || !Array.isArray(roleIds)) {
+      throw new ApiError(400, 'Role IDs must be provided as an array');
+    }
+
+    // 检查用户是否存在
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new ApiError(404, 'User not found');
+    }
+
+    // 检查所有角色是否存在
+    const roles = await prisma.role.findMany({
+      where: {
+        id: {
+          in: roleIds,
+        },
+      },
+    });
+
+    if (roles.length !== roleIds.length) {
+      throw new ApiError(400, 'Some roles do not exist');
+    }
+
+    // 先删除现有的角色分配
+    await prisma.userRole.deleteMany({
+      where: {
+        userId: id,
+      },
+    });
+
+    // 重新分配角色
+    if (roleIds.length > 0) {
+      await prisma.userRole.createMany({
+        data: roleIds.map(roleId => ({
+          userId: id,
+          roleId,
+        })),
+      });
+    }
+
+    // 获取更新后的用户及其角色
+    const updatedUser = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        roles: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: updatedUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/:id/roles/:roleId', authenticate, authorize(['admin']), async (req, res, next) => {
+  try {
+    const { id, roleId } = req.params;
+
+    // 检查用户是否存在
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new ApiError(404, 'User not found');
+    }
+
+    // 检查角色是否存在
+    const role = await prisma.role.findUnique({
+      where: { id: roleId },
+    });
+
+    if (!role) {
+      throw new ApiError(404, 'Role not found');
+    }
+
+    // 检查角色分配是否存在
+    const userRole = await prisma.userRole.findUnique({
+      where: {
+        userId_roleId: {
+          userId: id,
+          roleId,
+        },
+      },
+    });
+
+    if (!userRole) {
+      throw new ApiError(404, 'Role not assigned to this user');
+    }
+
+    // 删除角色分配
+    await prisma.userRole.delete({
+      where: {
+        userId_roleId: {
+          userId: id,
+          roleId,
+        },
+      },
+    });
+
+    // 获取更新后的用户及其角色
+    const updatedUser = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        roles: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: updatedUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
