@@ -60,18 +60,28 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem('accessToken', accessToken);
 
           // 获取用户权限
-          const permissionsResponse = await fetch('http://localhost:8000/api/permissions', {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-            },
-          });
+          try {
+            const permissionsResponse = await fetch('http://localhost:8000/api/permissions', {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+              },
+            });
 
-          if (permissionsResponse.ok) {
-            const permissionsData = await permissionsResponse.json();
-            const userPermissions = permissionsData.data
-              .filter((perm: Permission) => perm.type === 'menu')
-              .map((perm: Permission) => perm.code);
-            set({ permissions: userPermissions });
+            if (permissionsResponse.ok) {
+              const permissionsData = await permissionsResponse.json();
+              const userPermissions = permissionsData.data
+                .filter((perm: Permission) => perm.type === 'menu')
+                .map((perm: Permission) => perm.code);
+              set({ permissions: userPermissions });
+            } else {
+              console.error('Failed to get permissions:', permissionsResponse.status);
+              // 即使权限获取失败，也允许登录，使用默认权限
+              set({ permissions: ['dashboard.view', 'shop.manage', 'product.manage', 'inventory.manage', 'sales.manage', 'financial.manage', 'report.manage', 'user.manage', 'system.manage', 'role.manage', 'permission.manage'] });
+            }
+          } catch (error) {
+            console.error('Error fetching permissions:', error);
+            // 即使权限获取失败，也允许登录，使用默认权限
+            set({ permissions: ['dashboard.view', 'shop.manage', 'product.manage', 'inventory.manage', 'sales.manage', 'financial.manage', 'report.manage', 'user.manage', 'system.manage', 'role.manage', 'permission.manage'] });
           }
 
           set({ user, isAuthenticated: true, isLoading: false });
@@ -116,7 +126,17 @@ export const usePermission = (permission: string) => {
 
 // 菜单权限过滤函数
 export const filterMenuByPermission = (menu: any[]) => {
-  const permissions = useAuthStore.getState().permissions;
+  const { permissions, isAuthenticated } = useAuthStore.getState();
+  
+  // 如果用户未登录，返回空菜单
+  if (!isAuthenticated) {
+    return [];
+  }
+  
+  // 如果用户已登录但没有权限，返回空菜单
+  if (permissions.length === 0) {
+    return [];
+  }
   
   return menu.filter((item) => {
     if (item.permission) {
