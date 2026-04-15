@@ -69,9 +69,17 @@ export const requirePermission = (permission: string | string[]) => {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       include: {
-        roles: {
+        userRoles: {
           include: {
-            permissions: true,
+            role: {
+              include: {
+                rolePermissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -83,8 +91,8 @@ export const requirePermission = (permission: string | string[]) => {
 
     // 收集用户的所有权限
     const userPermissions = new Set<string>();
-    user.roles.forEach(role => {
-      role.permissions.forEach(p => userPermissions.add(p.code));
+    user.userRoles.forEach(userRole => {
+      userRole.role.rolePermissions.forEach(rp => userPermissions.add(rp.permission.code));
     });
 
     // 检查用户是否有所需权限

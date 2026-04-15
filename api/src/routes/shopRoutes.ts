@@ -73,7 +73,7 @@ router.get('/:id', authenticate, async (req, res, next) => {
       where: { id },
       include: {
         _count: {
-          select: { products: true, salesOrders: true, users: true },
+          select: { products: true, salesOrders: true },
         },
       },
     });
