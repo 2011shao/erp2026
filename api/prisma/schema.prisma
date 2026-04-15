@@ -23,34 +23,41 @@ model User {
 
 // 店铺模型
 model Shop {
-  id        String   @id @default(cuid())
-  name      String
-  address   String
-  phone     String
-  managerId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String           @id @default(cuid())
+  name            String
+  address         String
+  phone           String
+  managerId       String
+  products        Product[]
+  salesOrders     SalesOrder[]
+  financialRecords FinancialRecord[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 // 商品模型
 model Product {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   name        String
   category    String
   brand       String
   model       String
-  price       Decimal  @db.Decimal(10, 2)
-  costPrice   Decimal  @db.Decimal(10, 2)
+  price       Decimal
+  costPrice   Decimal
   stock       Int
   shopId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  shop        Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  inventoryLogs InventoryLog[]
+  salesOrderItems SalesOrderItem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 }
 
 // 库存变动记录
 model InventoryLog {
   id        String   @id @default(cuid())
   productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int
   type      String // in or out
   reason    String
@@ -60,29 +67,34 @@ model InventoryLog {
 
 // 销售订单
 model SalesOrder {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
   shopId    String
-  totalAmount Decimal @db.Decimal(10, 2)
-  status    String @default("completed")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  shop      Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  totalAmount Decimal
+  status    String           @default("completed")
+  items     SalesOrderItem[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 }
 
 // 销售订单详情
 model SalesOrderItem {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   orderId   String
+  order     SalesOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int
-  price     Decimal @db.Decimal(10, 2)
-  createdAt DateTime @default(now())
+  price     Decimal
+  createdAt DateTime    @default(now())
 }
 
 // 财务记录
 model FinancialRecord {
   id        String   @id @default(cuid())
   shopId    String
-  amount    Decimal @db.Decimal(10, 2)
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  amount    Decimal
   type      String // income or expense
   category  String
   description String

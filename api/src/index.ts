@@ -1,13 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import userRoutes from './routes/userRoutes.ts';
-import shopRoutes from './routes/shopRoutes.ts';
-import productRoutes from './routes/productRoutes.ts';
-import inventoryRoutes from './routes/inventoryRoutes.ts';
-import salesRoutes from './routes/salesRoutes.ts';
-import financialRoutes from './routes/financialRoutes.ts';
-import reportRoutes from './routes/reportRoutes.ts';
+import userRoutes from './routes/userRoutes';
+import shopRoutes from './routes/shopRoutes';
+import productRoutes from './routes/productRoutes';
+import inventoryRoutes from './routes/inventoryRoutes';
+import salesRoutes from './routes/salesRoutes';
+import financialRoutes from './routes/financialRoutes';
+import reportRoutes from './routes/reportRoutes';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 // 加载环境变量
 dotenv.config();
@@ -22,7 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // 健康检查
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Backend server is running' });
+  res.json({ success: true, status: 'ok', message: 'Backend server is running' });
 });
 
 // API 路由
@@ -35,15 +36,10 @@ app.use('/api/financial', financialRoutes);
 app.use('/api/reports', reportRoutes);
 
 // 404 处理
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+app.use(notFoundHandler);
 
 // 错误处理中间件
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', err);
-  res.status(500).json({ error: 'Internal server error' });
-});
+app.use(errorHandler);
 
 // 启动服务器
 app.listen(PORT, () => {
