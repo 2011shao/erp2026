@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// 用户模型
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  role      String   @default("user")
+  shopId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 店铺模型
+model Shop {
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  phone     String
+  managerId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 商品模型
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  category    String
+  brand       String
+  model       String
+  price       Decimal  @db.Decimal(10, 2)
+  costPrice   Decimal  @db.Decimal(10, 2)
+  stock       Int
+  shopId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 库存变动记录
+model InventoryLog {
+  id        String   @id @default(cuid())
+  productId String
+  quantity  Int
+  type      String // in or out
+  reason    String
+  shopId    String
+  createdAt DateTime @default(now())
+}
+
+// 销售订单
+model SalesOrder {
+  id        String   @id @default(cuid())
+  shopId    String
+  totalAmount Decimal @db.Decimal(10, 2)
+  status    String @default("completed")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 销售订单详情
+model SalesOrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+}
+
+// 财务记录
+model FinancialRecord {
+  id        String   @id @default(cuid())
+  shopId    String
+  amount    Decimal @db.Decimal(10, 2)
+  type      String // income or expense
+  category  String
+  description String
+  createdAt DateTime @default(now())
+}

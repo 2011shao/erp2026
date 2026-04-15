@@ -1,13 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import userRoutes from './routes/userRoutes';
-import shopRoutes from './routes/shopRoutes';
-import productRoutes from './routes/productRoutes';
-import inventoryRoutes from './routes/inventoryRoutes';
-import salesRoutes from './routes/salesRoutes';
-import financialRoutes from './routes/financialRoutes';
-import reportRoutes from './routes/reportRoutes';
+import userRoutes from './routes/userRoutes.ts';
+import shopRoutes from './routes/shopRoutes.ts';
+import productRoutes from './routes/productRoutes.ts';
+import inventoryRoutes from './routes/inventoryRoutes.ts';
+import salesRoutes from './routes/salesRoutes.ts';
+import financialRoutes from './routes/financialRoutes.ts';
+import reportRoutes from './routes/reportRoutes.ts';
 
 // 加载环境变量
 dotenv.config();
