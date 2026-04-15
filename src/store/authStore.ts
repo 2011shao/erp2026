@@ -42,7 +42,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           console.log('Login request:', { username, password });
-          const response = await fetch('http://localhost:8000/api/users/login', {
+          const response = await fetch('/api/users/login', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ export const useAuthStore = create<AuthState>()(
 
           // 获取用户权限
           try {
-            const permissionsResponse = await fetch('http://localhost:8000/api/permissions', {
+            const permissionsResponse = await fetch('/api/permissions', {
               headers: {
                 'Authorization': `Bearer ${accessToken}`,
               },
