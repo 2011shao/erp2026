@@ -30,7 +30,14 @@ class ApiClient {
     });
 
     this.token = localStorage.getItem('accessToken');
+    console.log('API client initialized with token:', this.token);
     this.setupInterceptors();
+  }
+
+  // 重新从localStorage加载token
+  reloadToken() {
+    this.token = localStorage.getItem('accessToken');
+    console.log('Token reloaded:', this.token);
   }
 
   private setupInterceptors() {

@@ -3,6 +3,9 @@ import { persist } from 'zustand/middleware';
 import { authApi } from '../api';
 import api from '../api';
 
+// 初始化时重新加载token
+api.reloadToken();
+
 interface User {
   id: string;
   username: string;
