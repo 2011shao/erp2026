@@ -4,6 +4,11 @@ import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LockOutlined } from
 import { Link, Routes, Route, useLocation } from 'react-router-dom';
 import { useAuthStore, filterMenuByPermission } from './store/authStore';
 import { menuConfig } from './config/menu';
+import HomePage from './pages/HomePage';
+import ShopPage from './pages/ShopPage';
+import ProductPage from './pages/ProductPage';
+import InventoryPage from './pages/InventoryPage';
+import FinancialPage from './pages/FinancialPage';
 
 const { Header, Content, Sider } = Layout;
 
@@ -65,6 +70,14 @@ const App: React.FC = () => {
     
     return items;
   };
+
+  // 简单的占位组件
+  const SimplePage: React.FC<{ title: string }> = ({ title }) => (
+    <div>
+      <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>{title}</h2>
+      <p>此页面正在开发中...</p>
+    </div>
+  );
 
   return (
     <ConfigProvider
@@ -302,18 +315,18 @@ const App: React.FC = () => {
                 <Route path="/shops" element={<ShopPage />} />
                 <Route path="/products" element={<ProductPage />} />
                 <Route path="/inventory" element={<InventoryPage />} />
-                <Route path="/serial-numbers" element={<SerialNumberPage />} />
-                <Route path="/sales" element={<SalesPage />} />
-                <Route path="/purchases" element={<PurchasePage />} />
-                <Route path="/warehouses" element={<WarehousePage />} />
-                <Route path="/transfers" element={<TransferPage />} />
-                <Route path="/stocktakes" element={<StocktakePage />} />
-                <Route path="/cashier" element={<CashierPage />} />
+                <Route path="/serial-numbers" element={<SimplePage title="串号管理" />} />
+                <Route path="/sales" element={<SimplePage title="销售管理" />} />
+                <Route path="/purchases" element={<SimplePage title="采购管理" />} />
+                <Route path="/warehouses" element={<SimplePage title="仓库管理" />} />
+                <Route path="/transfers" element={<SimplePage title="调拨管理" />} />
+                <Route path="/stocktakes" element={<SimplePage title="库存盘点" />} />
+                <Route path="/cashier" element={<SimplePage title="收银台" />} />
                 <Route path="/financial" element={<FinancialPage />} />
-                <Route path="/reports" element={<ReportPage />} />
-                <Route path="/users" element={<UserPage />} />
-                <Route path="/settings/roles" element={<RolePage />} />
-                <Route path="/settings/permissions" element={<PermissionPage />} />
+                <Route path="/reports" element={<SimplePage title="报表分析" />} />
+                <Route path="/users" element={<SimplePage title="用户管理" />} />
+                <Route path="/settings/roles" element={<SimplePage title="角色管理" />} />
+                <Route path="/settings/permissions" element={<SimplePage title="权限管理" />} />
               </Routes>
             </Content>
           </Layout>
@@ -322,30 +335,5 @@ const App: React.FC = () => {
     </ConfigProvider>
   );
 };
-
-const HomePage: React.FC = () => {
-  return (
-    <div>
-      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>欢迎使用多门店 ERP 系统</h1>
-      <p>这是一个简化版的ERP系统，包含店铺管理、商品管理、库存管理、销售管理等功能。</p>
-    </div>
-  );
-};
-
-const ShopPage: React.FC = () => <div>店铺管理页面</div>;
-const ProductPage: React.FC = () => <div>商品管理页面</div>;
-const InventoryPage: React.FC = () => <div>库存管理页面</div>;
-const SerialNumberPage: React.FC = () => <div>串号管理页面</div>;
-const SalesPage: React.FC = () => <div>销售管理页面</div>;
-const PurchasePage: React.FC = () => <div>采购管理页面</div>;
-const WarehousePage: React.FC = () => <div>仓库管理页面</div>;
-const TransferPage: React.FC = () => <div>调拨管理页面</div>;
-const StocktakePage: React.FC = () => <div>库存盘点页面</div>;
-const CashierPage: React.FC = () => <div>收银台页面</div>;
-const FinancialPage: React.FC = () => <div>财务管理页面</div>;
-const ReportPage: React.FC = () => <div>报表分析页面</div>;
-const UserPage: React.FC = () => <div>用户管理页面</div>;
-const RolePage: React.FC = () => <div>角色管理页面</div>;
-const PermissionPage: React.FC = () => <div>权限管理页面</div>;
 
 export default App;
