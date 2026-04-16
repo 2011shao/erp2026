@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import { Card, Tag, Button, Badge, Rate } from 'antd';
-import { CalendarOutlined, ClockCircleOutlined, MapOutlined, TicketOutlined, StarOutlined } from '@ant-design/icons';
+import React from 'react';
 
 interface Movie {
   id: number;
@@ -91,8 +89,6 @@ const movies: Movie[] = [
 ];
 
 const MovieList: React.FC = () => {
-  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white py-8 px-4">
       <div className="max-w-7xl mx-auto">
@@ -109,53 +105,52 @@ const MovieList: React.FC = () => {
         {/* Movie Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {movies.map((movie) => (
-            <Card
+            <div 
               key={movie.id}
               className="bg-gray-800 border-none rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
-              cover={
-                <div className="relative">
-                  <img 
-                    src={movie.poster} 
-                    alt={movie.title} 
-                    className="w-full h-80 object-cover transition-transform duration-500 hover:scale-105"
-                  />
-                  {movie.discount && (
-                    <Badge.Ribbon 
-                      text="9.9元优惠" 
-                      color="red" 
-                      className="text-xs font-bold"
-                    />
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-white font-bold text-lg">{movie.title}</span>
-                      <div className="flex items-center">
-                        <StarOutlined className="text-yellow-400 mr-1" />
-                        <span className="text-white">{movie.rating}</span>
-                      </div>
+            >
+              {/* Poster */}
+              <div className="relative">
+                <img 
+                  src={movie.poster} 
+                  alt={movie.title} 
+                  className="w-full h-80 object-cover transition-transform duration-500 hover:scale-105"
+                />
+                {movie.discount && (
+                  <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold py-1 px-3">
+                    9.9元优惠
+                  </div>
+                )}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white font-bold text-lg">{movie.title}</span>
+                    <div className="flex items-center">
+                      <span className="text-yellow-400 mr-1">★</span>
+                      <span className="text-white">{movie.rating}</span>
                     </div>
                   </div>
                 </div>
-              }
-            >
-              <div className="space-y-3">
+              </div>
+
+              {/* Content */}
+              <div className="p-4 space-y-3">
                 {/* Duration */}
                 <div className="flex items-center text-gray-300">
-                  <ClockCircleOutlined className="mr-2 text-amber-500" />
+                  <span className="mr-2 text-amber-500">⏱️</span>
                   <span>{movie.duration}</span>
                 </div>
 
                 {/* Theaters */}
                 <div>
                   <div className="flex items-center text-gray-300 mb-2">
-                    <MapOutlined className="mr-2 text-blue-400" />
+                    <span className="mr-2 text-blue-400">📍</span>
                     <span>支持影院</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {movie.theaters.map((theater, index) => (
-                      <Tag key={index} className="bg-gray-700 text-gray-200 hover:bg-gray-600">
+                      <span key={index} className="bg-gray-700 text-gray-200 px-2 py-1 rounded text-sm">
                         {theater}
-                      </Tag>
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -163,14 +158,14 @@ const MovieList: React.FC = () => {
                 {/* Showtimes */}
                 <div>
                   <div className="flex items-center text-gray-300 mb-2">
-                    <CalendarOutlined className="mr-2 text-green-400" />
+                    <span className="mr-2 text-green-400">📅</span>
                     <span>今日场次</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {movie.showtimes.map((time, index) => (
-                      <Tag key={index} className="bg-gray-700 text-gray-200 hover:bg-gray-600 cursor-pointer">
+                      <span key={index} className="bg-gray-700 text-gray-200 px-2 py-1 rounded text-sm cursor-pointer">
                         {time}
-                      </Tag>
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -187,17 +182,14 @@ const MovieList: React.FC = () => {
                       <span className="text-white font-bold text-xl">¥{movie.originalPrice}</span>
                     )}
                   </div>
-                  <Button 
-                    type="primary" 
-                    icon={<TicketOutlined />}
-                    className="bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 border-none"
-                    onClick={() => setSelectedMovie(movie)}
+                  <button 
+                    className="bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white font-bold py-2 px-4 rounded"
                   >
                     立即购票
-                  </Button>
+                  </button>
                 </div>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
 
@@ -205,12 +197,11 @@ const MovieList: React.FC = () => {
         <div className="mt-12 bg-gradient-to-r from-red-600 to-amber-500 rounded-lg p-6 text-center">
           <h2 className="text-2xl font-bold mb-2">限时优惠</h2>
           <p className="text-white mb-4">部分影片享受9.9元特惠票价，数量有限，先到先得！</p>
-          <Button 
-            type="primary" 
-            className="bg-white text-red-600 hover:bg-gray-100 border-none"
+          <button 
+            className="bg-white text-red-600 hover:bg-gray-100 font-bold py-2 px-4 rounded"
           >
             查看全部优惠
-          </Button>
+          </button>
         </div>
       </div>
     </div>
