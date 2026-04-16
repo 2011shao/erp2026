@@ -1,13 +1,13 @@
 import { Router, type Request, type Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
-import { authenticateToken } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 import { logSerialNumberStatusChange } from '../utils/serialNumberUtils';
 
 const router = Router();
 const prisma = new PrismaClient();
 
 // 应用认证中间件
-router.use(authenticateToken);
+router.use(authenticate);
 
 // 获取库存盘点列表
 router.get('/', async (req: Request, res: Response): Promise<void> => {
