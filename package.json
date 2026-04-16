@@ -16,6 +16,9 @@
     "db:push": "prisma db push --schema api/prisma/schema.prisma",
     "db:seed": "ts-node api/prisma/seed.ts"
   },
+  "prisma": {
+    "seed": "ts-node api/prisma/seed.ts"
+  },
   "dependencies": {
     "@prisma/client": "^5.11.0",
     "@types/dotenv": "^6.1.1",
