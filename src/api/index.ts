@@ -43,8 +43,11 @@ class ApiClient {
   private setupInterceptors() {
     this.client.interceptors.request.use(
       (config) => {
+        console.log('Request config:', config);
+        console.log('Current token:', this.token);
         if (this.token) {
           config.headers.Authorization = `Bearer ${this.token}`;
+          console.log('Added token to request header');
         }
         return config;
       },
@@ -53,9 +56,11 @@ class ApiClient {
 
     this.client.interceptors.response.use(
       (response: AxiosResponse<ApiResponse>) => {
+        console.log('Response:', response);
         return response;
       },
       (error) => {
+        console.log('Error response:', error);
         const errorMessage = error.response?.data?.error || error.message || 'Request failed';
         return Promise.reject(new Error(errorMessage));
       }

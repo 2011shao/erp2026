@@ -50,7 +50,7 @@ export const useAuthStore = create<AuthState>()(
           const response = await authApi.login({ username, password });
           console.log('Login response:', response);
           
-          const { accessToken, user } = response.data;
+          const { accessToken, user } = response.data.data;
 
           // 存储token到localStorage和api客户端
           api.setToken(accessToken);
@@ -112,6 +112,15 @@ export const useAuthStore = create<AuthState>()(
         permissions: state.permissions,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => {
+        return (state) => {
+          if (state?.isAuthenticated) {
+            // 状态恢复时重新加载token
+            api.reloadToken();
+            console.log('Token reloaded after state hydration');
+          }
+        };
+      },
     }
   )
 );
