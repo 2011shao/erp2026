@@ -108,7 +108,17 @@ const ProductPage: React.FC = () => {
       title: '分类',
       dataIndex: 'category',
       key: 'category',
-      render: (category: string) => <Tag color="blue">{category}</Tag>,
+      render: (category: string) => {
+        const categoryMap: { [key: string]: string } = {
+          new: '新机',
+          used: '二手机',
+          accessory: '配件',
+          coupon: '卡券',
+          warranty: '延保',
+          carrier_plan: '运营商套餐'
+        };
+        return <Tag color="blue">{categoryMap[category] || category}</Tag>;
+      },
     },
     {
       title: '价格',
@@ -227,11 +237,12 @@ const ProductPage: React.FC = () => {
             rules={[{ required: true, message: '请选择分类' }]}
           >
             <Select placeholder="请选择分类">
-              <Option value="手机">手机</Option>
-              <Option value="电脑">电脑</Option>
-              <Option value="平板">平板</Option>
-              <Option value="耳机">耳机</Option>
-              <Option value="配件">配件</Option>
+              <Option value="new">新机</Option>
+              <Option value="used">二手机</Option>
+              <Option value="accessory">配件</Option>
+              <Option value="coupon">卡券</Option>
+              <Option value="warranty">延保</Option>
+              <Option value="carrier_plan">运营商套餐</Option>
             </Select>
           </Form.Item>
           <Form.Item

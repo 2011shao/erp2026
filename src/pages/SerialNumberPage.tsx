@@ -16,6 +16,8 @@ const SerialNumberPage: React.FC = () => {
   const [editingSerialNumber, setEditingSerialNumber] = useState<any>(null);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<string[]>([]);
+  const [labelModalVisible, setLabelModalVisible] = useState(false);
   const [form] = Form.useForm();
 
   const fetchData = async () => {
@@ -99,6 +101,109 @@ const SerialNumberPage: React.FC = () => {
     } catch (error) {
       message.error('保存失败');
     }
+  };
+
+  const handlePrint = () => {
+    // 打印选中的串号
+    const selectedItems = serialNumbers.filter(sn => selectedSerialNumbers.includes(sn.id));
+    const printContent = selectedItems.map(sn => {
+      return `串号: ${sn.serialNumber}\n商品: ${sn.product?.name || '未知'}\n状态: ${getStatusText(sn.status)}\n\n`;
+    }).join('');
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write('<html><head><title>串号打印</title></head><body>');
+      printWindow.document.write('<pre>' + printContent + '</pre>');
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      in_stock: '在库',
+      sold: '已售出',
+      repairing: '维修中',
+      returned: '已退货',
+      scrapped: '已报废',
+      locked: '锁定',
+      returned_to_supplier: '退回供应商',
+      transferring: '调拨中',
+      stocktaking: '盘点中'
+    };
+    return statusMap[status] || status;
+  };
+
+  const handleGenerateLabels = () => {
+    // 生成标签
+    const selectedItems = serialNumbers.filter(sn => selectedSerialNumbers.includes(sn.id));
+    
+    // 生成HTML格式的标签
+    let labelHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          .label {
+            border: 1px solid #000;
+            padding: 10px;
+            margin: 10px;
+            width: 200px;
+            float: left;
+            font-family: Arial, sans-serif;
+          }
+          .label h3 {
+            margin: 0 0 10px 0;
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
+          }
+          .label p {
+            margin: 5px 0;
+            font-size: 12px;
+          }
+          .clear {
+            clear: both;
+          }
+        </style>
+      </head>
+      <body>
+    `;
+    
+    selectedItems.forEach(sn => {
+      labelHtml += `
+        <div class="label">
+          <h3>串号标签</h3>
+          <p><strong>串号:</strong> ${sn.serialNumber}</p>
+          <p><strong>商品:</strong> ${sn.product?.name || '未知'}</p>
+          <p><strong>品牌:</strong> ${sn.product?.brand || '未知'}</p>
+          <p><strong>型号:</strong> ${sn.product?.model || '未知'}</p>
+          <p><strong>状态:</strong> ${getStatusText(sn.status)}</p>
+          <p><strong>创建时间:</strong> ${new Date(sn.createdAt).toLocaleString('zh-CN')}</p>
+        </div>
+      `;
+    });
+    
+    labelHtml += `
+        <div class="clear"></div>
+      </body>
+      </html>
+    `;
+    
+    // 创建下载链接
+    const blob = new Blob([labelHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `串号标签_${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    message.success('标签生成成功');
+    setLabelModalVisible(false);
   };
 
   const columns = [
@@ -211,9 +316,25 @@ const SerialNumberPage: React.FC = () => {
       <Card
         title="串号管理"
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            添加串号
-          </Button>
+          <Space>
+            <Button 
+              type="default" 
+              disabled={selectedSerialNumbers.length === 0}
+              onClick={() => setLabelModalVisible(true)}
+            >
+              批量生成标签
+            </Button>
+            <Button 
+              type="default" 
+              disabled={selectedSerialNumbers.length === 0}
+              onClick={() => handlePrint()}
+            >
+              批量打印
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+              添加串号
+            </Button>
+          </Space>
         }
       >
         <div style={{ marginBottom: 16, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
@@ -240,6 +361,12 @@ const SerialNumberPage: React.FC = () => {
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 10 }}
+          rowSelection={{
+            selectedRowKeys: selectedSerialNumbers,
+            onChange: (selectedKeys: React.Key[]) => {
+              setSelectedSerialNumbers(selectedKeys as string[]);
+            },
+          }}
         />
       </Card>
 
@@ -298,6 +425,26 @@ const SerialNumberPage: React.FC = () => {
             </Select>
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title="批量生成标签"
+        open={labelModalVisible}
+        onOk={() => handleGenerateLabels()}
+        onCancel={() => setLabelModalVisible(false)}
+        width={500}
+      >
+        <div style={{ padding: '20px 0' }}>
+          <p>已选择 {selectedSerialNumbers.length} 个串号</p>
+          <p>标签将包含以下信息：</p>
+          <ul>
+            <li>串号</li>
+            <li>商品名称</li>
+            <li>状态</li>
+            <li>创建时间</li>
+          </ul>
+          <p>点击确定后将生成标签并下载</p>
+        </div>
       </Modal>
     </div>
   );
