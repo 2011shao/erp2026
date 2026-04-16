@@ -1,14 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Layout, Menu, Button, Form, Input, Avatar, Dropdown, Breadcrumb, ConfigProvider, theme, Modal } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined, SearchOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
+import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
 import { Link, Routes, Route, useLocation } from 'react-router-dom';
 import { useAuthStore, filterMenuByPermission } from './store/authStore';
 import { menuConfig } from './config/menu';
 
 const { Header, Content, Sider } = Layout;
-
-// 配置主题
-const { token } = theme.useToken();
 
 const App: React.FC = () => {
   const { user, isAuthenticated, login, logout, isLoading, error } = useAuthStore();
@@ -135,8 +132,8 @@ const App: React.FC = () => {
               marginLeft: 16,
             }}>多门店 ERP 系统</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-            {isAuthenticated && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {isAuthenticated ? (
               <>
                 <div style={{ 
                   display: 'flex', 
@@ -165,9 +162,7 @@ const App: React.FC = () => {
                       {
                         key: 'logout',
                         label: '退出登录',
-                        onClick: () => {
-                          logout();
-                        },
+                        onClick: logout,
                       },
                     ],
                   }}
@@ -179,8 +174,7 @@ const App: React.FC = () => {
                   </Button>
                 </Dropdown>
               </>
-            )}
-            {!isAuthenticated && (
+            ) : (
               <Button type="primary" onClick={() => setIsLoginModalOpen(true)}>
                 登录
               </Button>
@@ -221,7 +215,7 @@ const App: React.FC = () => {
                 type="text"
                 icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                 onClick={() => setCollapsed(!collapsed)}
-                style={{ fontSize: '16px', color: 'white', display: 'flex' }}
+                style={{ fontSize: '16px', color: 'white' }}
               />
             </div>
             <Menu
@@ -279,17 +273,16 @@ const App: React.FC = () => {
             </Form>
           </Modal>
           <Layout style={{ 
-            padding: { xs: '8px', sm: '16px', md: '24px' },
+            padding: '16px 24px',
             flex: 1,
             overflow: 'auto',
           }}>
             <Content style={{ 
               backgroundColor: 'white', 
-              padding: { xs: '12px', sm: '16px', md: '24px' }, 
+              padding: '24px', 
               minHeight: 280, 
               borderRadius: 8, 
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.09)',
-              marginBottom: { xs: '12px', sm: '24px' },
             }}>
               {/* 面包屑导航 */}
               <div style={{ 
@@ -300,10 +293,7 @@ const App: React.FC = () => {
               }}>
                 <Breadcrumb 
                   items={getBreadcrumbItems()} 
-                  style={{ 
-                    display: { xs: 'none', sm: 'flex' },
-                    fontSize: '14px',
-                  }} 
+                  style={{ fontSize: '14px' }} 
                 />
               </div>
               
@@ -335,75 +325,27 @@ const App: React.FC = () => {
 
 const HomePage: React.FC = () => {
   return (
-    <div style={{ padding: { xs: '0', sm: '0' } }}>
-      <h1 style={{ 
-        fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }, 
-        fontWeight: 'bold', 
-        marginBottom: { xs: '1rem', sm: '1.5rem' }
-      }}>欢迎使用多门店 ERP 系统</h1>
+    <div>
+      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>欢迎使用多门店 ERP 系统</h1>
       <p>这是一个简化版的ERP系统，包含店铺管理、商品管理、库存管理、销售管理等功能。</p>
     </div>
   );
 };
 
-const ShopPage: React.FC = () => {
-  return <div>店铺管理页面</div>;
-};
-
-const ProductPage: React.FC = () => {
-  return <div>商品管理页面</div>;
-};
-
-const InventoryPage: React.FC = () => {
-  return <div>库存管理页面</div>;
-};
-
-const SerialNumberPage: React.FC = () => {
-  return <div>串号管理页面</div>;
-};
-
-const SalesPage: React.FC = () => {
-  return <div>销售管理页面</div>;
-};
-
-const PurchasePage: React.FC = () => {
-  return <div>采购管理页面</div>;
-};
-
-const WarehousePage: React.FC = () => {
-  return <div>仓库管理页面</div>;
-};
-
-const TransferPage: React.FC = () => {
-  return <div>调拨管理页面</div>;
-};
-
-const StocktakePage: React.FC = () => {
-  return <div>库存盘点页面</div>;
-};
-
-const CashierPage: React.FC = () => {
-  return <div>收银台页面</div>;
-};
-
-const FinancialPage: React.FC = () => {
-  return <div>财务管理页面</div>;
-};
-
-const ReportPage: React.FC = () => {
-  return <div>报表分析页面</div>;
-};
-
-const UserPage: React.FC = () => {
-  return <div>用户管理页面</div>;
-};
-
-const RolePage: React.FC = () => {
-  return <div>角色管理页面</div>;
-};
-
-const PermissionPage: React.FC = () => {
-  return <div>权限管理页面</div>;
-};
+const ShopPage: React.FC = () => <div>店铺管理页面</div>;
+const ProductPage: React.FC = () => <div>商品管理页面</div>;
+const InventoryPage: React.FC = () => <div>库存管理页面</div>;
+const SerialNumberPage: React.FC = () => <div>串号管理页面</div>;
+const SalesPage: React.FC = () => <div>销售管理页面</div>;
+const PurchasePage: React.FC = () => <div>采购管理页面</div>;
+const WarehousePage: React.FC = () => <div>仓库管理页面</div>;
+const TransferPage: React.FC = () => <div>调拨管理页面</div>;
+const StocktakePage: React.FC = () => <div>库存盘点页面</div>;
+const CashierPage: React.FC = () => <div>收银台页面</div>;
+const FinancialPage: React.FC = () => <div>财务管理页面</div>;
+const ReportPage: React.FC = () => <div>报表分析页面</div>;
+const UserPage: React.FC = () => <div>用户管理页面</div>;
+const RolePage: React.FC = () => <div>角色管理页面</div>;
+const PermissionPage: React.FC = () => <div>权限管理页面</div>;
 
 export default App;
