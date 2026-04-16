@@ -15,6 +15,11 @@ import PurchasePage from './pages/PurchasePage';
 import UserPage from './pages/UserPage';
 import RolePage from './pages/RolePage';
 import PermissionPage from './pages/PermissionPage';
+import WarehousePage from './pages/WarehousePage';
+import TransferPage from './pages/TransferPage';
+import StocktakePage from './pages/StocktakePage';
+import CashierPage from './pages/CashierPage';
+import ReportPage from './pages/ReportPage';
 
 const { Header, Content, Sider } = Layout;
 
@@ -324,12 +329,12 @@ const App: React.FC = () => {
                 <Route path="/serial-numbers" element={<SerialNumberPage />} />
                 <Route path="/sales" element={<SalesPage />} />
                 <Route path="/purchases" element={<PurchasePage />} />
-                <Route path="/warehouses" element={<SimplePage title="仓库管理" />} />
-                <Route path="/transfers" element={<SimplePage title="调拨管理" />} />
-                <Route path="/stocktakes" element={<SimplePage title="库存盘点" />} />
-                <Route path="/cashier" element={<SimplePage title="收银台" />} />
+                <Route path="/warehouses" element={<WarehousePage />} />
+                <Route path="/transfers" element={<TransferPage />} />
+                <Route path="/stocktakes" element={<StocktakePage />} />
+                <Route path="/cashier" element={<CashierPage />} />
                 <Route path="/financial" element={<FinancialPage />} />
-                <Route path="/reports" element={<SimplePage title="报表分析" />} />
+                <Route path="/reports" element={<ReportPage />} />
                 <Route path="/users" element={<UserPage />} />
                 <Route path="/settings/roles" element={<RolePage />} />
                 <Route path="/settings/permissions" element={<PermissionPage />} />
