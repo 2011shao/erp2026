@@ -4,6 +4,7 @@ import { MenuFoldOutlined, MenuUnfoldOutlined, SearchOutlined, UserOutlined, Loc
 import { Link, Routes, Route, useLocation } from 'react-router-dom';
 import { useAuthStore, filterMenuByPermission } from './store/authStore';
 import { menuConfig } from './config/menu';
+import MovieList from './components/MovieList';
 
 const { Header, Content, Sider } = Layout;
 
@@ -309,6 +310,7 @@ const App: React.FC = () => {
               
               <Routes>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/movies" element={<MovieList />} />
                 <Route path="/shops" element={<ShopPage />} />
                 <Route path="/products" element={<ProductPage />} />
                 <Route path="/inventory" element={<InventoryPage />} />

@@ -1,4 +1,4 @@
-import { HomeOutlined, ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarOutlined, BarChartOutlined, UserOutlined, SettingOutlined, TagsOutlined, DollarCircleOutlined, ShoppingCartOutlined, SwapOutlined } from '@ant-design/icons';
+import { HomeOutlined, ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarOutlined, BarChartOutlined, UserOutlined, SettingOutlined, TagsOutlined, DollarCircleOutlined, ShoppingCartOutlined, SwapOutlined, VideoCameraOutlined } from '@ant-design/icons';
 
 export interface MenuItem {
   key: string;
@@ -16,6 +16,13 @@ export const menuConfig: MenuItem[] = [
     label: '首页',
     path: '/',
     permission: 'dashboard.view'
+  },
+  {
+    key: '14',
+    icon: <VideoCameraOutlined />,
+    label: '电影列表',
+    path: '/movies',
+    permission: 'movie.view'
   },
   {
     key: '2',
