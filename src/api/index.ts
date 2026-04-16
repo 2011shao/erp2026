@@ -246,6 +246,25 @@ export interface FinancialRecord {
   };
 }
 
+export interface SerialNumber {
+  id: string;
+  serialNumber: string;
+  productId: string;
+  status: string;
+  shopId: string;
+  product?: {
+    name: string;
+    brand: string;
+    model: string;
+  };
+  shop?: {
+    name: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  logs?: any[];
+}
+
 export const authApi = {
   login: async (data: LoginRequest) => api.post<LoginResponse>('/users/login', data),
   register: async (data: Partial<User> & { password: string }) => 
@@ -329,6 +348,29 @@ export const inventoryApi = {
   }) => api.post('/inventory/stocktake', data),
 };
 
+export interface CommissionRule {
+  id: string;
+  name: string;
+  type: 'fixed' | 'percentage';
+  value: number;
+  minAmount?: number;
+  maxAmount?: number;
+  productCategory?: string;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CommissionRecord {
+  id: string;
+  orderId: string;
+  userId: string;
+  amount: number;
+  status: 'pending' | 'approved' | 'paid';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const salesApi = {
   getAll: (params?: { 
     page?: number; 
@@ -349,6 +391,22 @@ export const salesApi = {
   updateStatus: (id: string, status: string) => 
     api.patch<SalesOrder>(`/sales/${id}/status`, { status }),
   delete: (id: string) => api.delete(`/sales/${id}`),
+  print: (id: string) => api.post(`/sales/${id}/print`),
+  return: (id: string, data: { items: { productId: string; quantity: number; price: number; serialNumbers?: string[] }[]; reason: string }) => 
+    api.post(`/sales/${id}/return`, data),
+  exchange: (id: string, data: { returnItems: { productId: string; quantity: number; price: number; serialNumbers?: string[] }[]; exchangeItems: { productId: string; quantity: number; price: number; serialNumbers?: string[] }[]; reason: string }) => 
+    api.post(`/sales/${id}/exchange`, data),
+  getCommissionRules: () => api.get<CommissionRule[]>('/sales/commission-rules'),
+  createCommissionRule: (data: { name: string; type: 'fixed' | 'percentage'; value: number; minAmount?: number; maxAmount?: number; productCategory?: string; status: 'active' | 'inactive' }) => 
+    api.post<CommissionRule>('/sales/commission-rules', data),
+  getCommissionRule: (id: string) => api.get<CommissionRule>(`/sales/commission-rules/${id}`),
+  updateCommissionRule: (id: string, data: { name?: string; type?: 'fixed' | 'percentage'; value?: number; minAmount?: number; maxAmount?: number; productCategory?: string; status?: 'active' | 'inactive' }) => 
+    api.put<CommissionRule>(`/sales/commission-rules/${id}`, data),
+  deleteCommissionRule: (id: string) => api.delete(`/sales/commission-rules/${id}`),
+  calculateCommission: (id: string, data: { userId?: string }) => 
+    api.post(`/sales/${id}/calculate-commission`, data),
+  getGrossProfitReport: (params?: { startDate?: string; endDate?: string; shopId?: string; productCategory?: string }) => 
+    api.get('/sales/reports/gross-profit', { params }),
 };
 
 export const financialApi = {
@@ -380,6 +438,290 @@ export const reportApi = {
     api.get('/reports/financial-analysis', { params }),
   getShopComparison: () => api.get('/reports/shop-comparison'),
   getOverview: () => api.get('/reports/overview'),
+};
+
+export interface PurchaseOrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  quantity: number;
+  price: number;
+  createdAt: string;
+  serialNumbers?: SerialNumber[];
+}
+
+export interface PurchaseOrder {
+  id: string;
+  shopId: string;
+  supplierId: string;
+  totalAmount: number;
+  status: 'pending' | 'completed' | 'cancelled';
+  items: PurchaseOrderItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const serialNumberApi = {
+  getAll: (params?: { 
+    page?: number; 
+    limit?: number; 
+    search?: string; 
+    status?: string; 
+    productId?: string; 
+    shopId?: string 
+  }) => api.get<SerialNumber[]>('/serial-numbers', { params }),
+  getById: (id: string) => api.get<SerialNumber>(`/serial-numbers/${id}`),
+  create: (data: { 
+    serialNumber: string; 
+    productId: string; 
+    shopId: string; 
+    status?: string 
+  }) => api.post<SerialNumber>('/serial-numbers', data),
+  update: (id: string, data: { 
+    status?: string; 
+    productId?: string; 
+    shopId?: string 
+  }) => api.put<SerialNumber>(`/serial-numbers/${id}`, data),
+  updateStatus: (id: string, data: { status: string; reason: string }) => 
+    api.patch<SerialNumber>(`/serial-numbers/${id}/status`, data),
+  delete: (id: string) => api.delete(`/serial-numbers/${id}`),
+  import: (data: { 
+    serialNumbers: string[]; 
+    productId: string; 
+    shopId: string 
+  }) => api.post('/serial-numbers/import', data),
+  export: (params?: { 
+    status?: string; 
+    productId?: string; 
+    shopId?: string 
+  }) => api.get('/serial-numbers/export', { params }),
+  getAlerts: (params?: { shopId?: string }) => api.get('/serial-numbers/alerts', { params }),
+  clearAlert: (id: string) => api.patch(`/serial-numbers/${id}/clear-alert`),
+};
+
+export const purchaseApi = {
+  getAll: (params?: { 
+    page?: number; 
+    limit?: number; 
+    shopId?: string; 
+    status?: string 
+  }) => api.get<PurchaseOrder[]>('/purchases', { params }),
+  getById: (id: string) => api.get<PurchaseOrder>(`/purchases/${id}`),
+  create: (data: { 
+    shopId: string; 
+    supplierId: string; 
+    items: { productId: string; quantity: number; price: number; serialNumbers?: string[] }[]; 
+    status?: string 
+  }) => api.post<PurchaseOrder>('/purchases', data),
+  update: (id: string, data: { status?: string }) => 
+    api.put<PurchaseOrder>(`/purchases/${id}`, data),
+  delete: (id: string) => api.delete(`/purchases/${id}`),
+  bindSerialNumbers: (id: string, data: { itemId: string; serialNumbers: string[] }) => 
+    api.post(`/purchases/${id}/serial-numbers`, data),
+  unbindSerialNumber: (id: string, serialNumberId: string) => 
+    api.delete(`/purchases/${id}/serial-numbers/${serialNumberId}`),
+  getSerialNumbers: (id: string) => api.get<SerialNumber[]>(`/purchases/${id}/serial-numbers`),
+};
+
+export interface Warehouse {
+  id: string;
+  name: string;
+  code: string;
+  address: string;
+  contactName: string;
+  contactPhone: string;
+  status: 'active' | 'inactive';
+  shopId: string;
+  createdAt: string;
+  updatedAt: string;
+  shop?: {
+    id: string;
+    name: string;
+  };
+}
+
+export const warehouseApi = {
+  getAll: (params?: { 
+    page?: number; 
+    limit?: number; 
+    shopId?: string; 
+    status?: string 
+  }) => api.get<Warehouse[]>('/warehouses', { params }),
+  getById: (id: string) => api.get<Warehouse>(`/warehouses/${id}`),
+  create: (data: { 
+    name: string; 
+    code: string; 
+    address: string; 
+    contactName: string; 
+    contactPhone: string; 
+    shopId: string; 
+    status?: 'active' | 'inactive' 
+  }) => api.post<Warehouse>('/warehouses', data),
+  update: (id: string, data: { 
+    name?: string; 
+    code?: string; 
+    address?: string; 
+    contactName?: string; 
+    contactPhone?: string; 
+    status?: 'active' | 'inactive' 
+  }) => api.put<Warehouse>(`/warehouses/${id}`, data),
+  delete: (id: string) => api.delete(`/warehouses/${id}`),
+  getProducts: (id: string, params?: { 
+    page?: number; 
+    limit?: number 
+  }) => api.get<Product[]>(`/warehouses/${id}/products`, { params }),
+  getSerialNumbers: (id: string, params?: { 
+    page?: number; 
+    limit?: number 
+  }) => api.get<SerialNumber[]>(`/warehouses/${id}/serial-numbers`, { params }),
+};
+
+export interface TransferOrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  quantity: number;
+  createdAt: string;
+  product?: {
+    id: string;
+    name: string;
+    brand: string;
+    model: string;
+  };
+  serialNumbers?: SerialNumber[];
+}
+
+export interface TransferOrder {
+  id: string;
+  fromWarehouseId: string;
+  toWarehouseId: string;
+  shopId: string;
+  operatorId: string;
+  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  reason: string;
+  totalItems: number;
+  createdAt: string;
+  updatedAt: string;
+  fromWarehouse?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  toWarehouse?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  operator?: {
+    id: string;
+    username: string;
+  };
+  items: TransferOrderItem[];
+  logs?: any[];
+}
+
+export const transferApi = {
+  getAll: (params?: { 
+    page?: number; 
+    limit?: number; 
+    status?: string; 
+    fromWarehouseId?: string; 
+    toWarehouseId?: string; 
+    search?: string 
+  }) => api.get<TransferOrder[]>('/transfers', { params }),
+  getById: (id: string) => api.get<TransferOrder>(`/transfers/${id}`),
+  create: (data: { 
+    fromWarehouseId: string; 
+    toWarehouseId: string; 
+    reason: string; 
+    items: { productId: string; quantity: number }[] 
+  }) => api.post<TransferOrder>('/transfers', data),
+  updateStatus: (id: string, data: { status: string; reason?: string }) => 
+    api.put(`/transfers/${id}/status`, data),
+  delete: (id: string) => api.delete(`/transfers/${id}`),
+  addSerialNumbers: (id: string, data: { itemId: string; serialNumberIds: string[] }) => 
+    api.post(`/transfers/${id}/serial-numbers`, data),
+  removeSerialNumber: (id: string, serialNumberId: string) => 
+    api.delete(`/transfers/${id}/serial-numbers/${serialNumberId}`),
+  getSerialNumbers: (id: string) => api.get<SerialNumber[]>(`/transfers/${id}/serial-numbers`),
+};
+
+export interface StocktakeItem {
+  id: string;
+  stocktakeId: string;
+  productId: string;
+  expectedStock: number;
+  actualStock: number;
+  variance: number;
+  unitPrice: number;
+  varianceValue: number;
+  notes?: string;
+  createdAt: string;
+  product?: {
+    id: string;
+    name: string;
+    brand: string;
+    model: string;
+    price: number;
+  };
+  serialNumbers?: SerialNumber[];
+}
+
+export interface Stocktake {
+  id: string;
+  shopId: string;
+  warehouseId: string;
+  operatorId: string;
+  status: 'in_progress' | 'completed' | 'cancelled';
+  startDate: string;
+  endDate?: string;
+  totalItems: number;
+  variance: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  warehouse?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  shop?: {
+    id: string;
+    name: string;
+  };
+  operator?: {
+    id: string;
+    username: string;
+  };
+  items: StocktakeItem[];
+  logs?: any[];
+}
+
+export const stocktakeApi = {
+  getAll: (params?: { 
+    page?: number; 
+    limit?: number; 
+    status?: string; 
+    warehouseId?: string; 
+    shopId?: string; 
+    search?: string 
+  }) => api.get<Stocktake[]>('/stocktakes', { params }),
+  getById: (id: string) => api.get<Stocktake>(`/stocktakes/${id}`),
+  create: (data: { 
+    warehouseId: string; 
+    notes?: string 
+  }) => api.post<Stocktake>('/stocktakes', data),
+  updateItem: (id: string, itemId: string, data: { actualStock: number; notes?: string }) => 
+    api.put(`/stocktakes/${id}/items/${itemId}`, data),
+  addSerialNumbers: (id: string, itemId: string, data: { serialNumberIds: string[] }) => 
+    api.post(`/stocktakes/${id}/items/${itemId}/serial-numbers`, data),
+  removeSerialNumber: (id: string, itemId: string, serialNumberId: string) => 
+    api.delete(`/stocktakes/${id}/items/${itemId}/serial-numbers/${serialNumberId}`),
+  complete: (id: string, data: { reason?: string }) => 
+    api.put(`/stocktakes/${id}/complete`, data),
+  cancel: (id: string, data: { reason?: string }) => 
+    api.put(`/stocktakes/${id}/cancel`, data),
+  delete: (id: string) => api.delete(`/stocktakes/${id}`),
 };
 
 export default api;

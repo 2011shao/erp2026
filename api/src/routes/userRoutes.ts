@@ -1,6 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import prisma from '../lib/prisma';
 import { ApiError } from '../middleware/errorHandler';
 import { authenticate, authorize, AuthenticatedRequest } from '../middleware/auth';
@@ -29,14 +29,14 @@ router.post('/login', async (req, res, next) => {
 
     const accessToken = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET || 'your-secret-key-change-in-production',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      (process.env.JWT_SECRET || 'your-secret-key-change-in-production') as string,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' } as SignOptions
     );
 
     const refreshToken = jwt.sign(
       { userId: user.id },
-      process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key-change-in-production',
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+      (process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key-change-in-production') as string,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' } as SignOptions
     );
 
     res.json({
@@ -228,7 +228,11 @@ router.get('/:id/roles', authenticate, authorize(['admin']), async (req, res, ne
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
-        roles: true,
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
       },
     });
 
@@ -238,7 +242,7 @@ router.get('/:id/roles', authenticate, authorize(['admin']), async (req, res, ne
 
     res.json({
       success: true,
-      data: user.roles,
+      data: user.userRoles.map(ur => ur.role),
     });
   } catch (error) {
     next(error);
@@ -297,7 +301,11 @@ router.post('/:id/roles', authenticate, authorize(['admin']), async (req, res, n
     const updatedUser = await prisma.user.findUnique({
       where: { id },
       include: {
-        roles: true,
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
       },
     });
 
@@ -360,7 +368,11 @@ router.delete('/:id/roles/:roleId', authenticate, authorize(['admin']), async (r
     const updatedUser = await prisma.user.findUnique({
       where: { id },
       include: {
-        roles: true,
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
       },
     });
 
