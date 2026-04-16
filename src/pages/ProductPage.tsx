@@ -28,8 +28,8 @@ const ProductPage: React.FC = () => {
         productApi.getAll(),
         shopApi.getAllSimple(),
       ]);
-      setProducts(productsRes.data || []);
-      setShops(shopsRes.data || []);
+      setProducts(productsRes.data?.data || []);
+      setShops(shopsRes.data?.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       message.error('获取数据失败');

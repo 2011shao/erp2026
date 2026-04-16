@@ -18,7 +18,7 @@ const FinancialPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await financialApi.getAll();
-      setRecords(response.data || []);
+      setRecords(response.data?.data || []);
     } catch (error) {
       console.error('Error fetching financial records:', error);
     } finally {

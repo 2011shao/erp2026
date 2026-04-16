@@ -29,7 +29,7 @@ class ApiClient {
       },
     });
 
-    this.token = localStorage.getItem('token');
+    this.token = localStorage.getItem('accessToken');
     this.setupInterceptors();
   }
 
@@ -57,12 +57,12 @@ class ApiClient {
 
   setToken(token: string) {
     this.token = token;
-    localStorage.setItem('token', token);
+    localStorage.setItem('accessToken', token);
   }
 
   clearToken() {
     this.token = null;
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
   }
 
   getToken() {

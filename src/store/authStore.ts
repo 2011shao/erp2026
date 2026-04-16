@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { authApi } from '../api';
+import { authApi, api } from '../api';
 
 interface User {
   id: string;
@@ -48,8 +48,8 @@ export const useAuthStore = create<AuthState>()(
           
           const { accessToken, user } = response.data;
 
-          // 存储token到localStorage
-          localStorage.setItem('accessToken', accessToken);
+          // 存储token到localStorage和api客户端
+          api.setToken(accessToken);
 
           // 获取用户权限
           try {
@@ -85,7 +85,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        localStorage.removeItem('accessToken');
+        api.clearToken();
         set({ user: null, isAuthenticated: false, permissions: [] });
       },
 

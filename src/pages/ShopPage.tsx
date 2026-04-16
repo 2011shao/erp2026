@@ -21,7 +21,7 @@ const ShopPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await shopApi.getAll();
-      setShops(response.data || []);
+      setShops(response.data?.data || []);
     } catch (error) {
       console.error('Error fetching shops:', error);
       message.error('获取店铺列表失败');

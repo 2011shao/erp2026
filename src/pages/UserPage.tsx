@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, Input, Select, message, Modal, Form, InputNumber, Switch } from 'antd';
 import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../store/authStore';
-import { userApi } from '../api';
+import { userApi, roleApi } from '../api';
 
 const { Option } = Select;
 
@@ -32,8 +32,8 @@ const UserPage: React.FC = () => {
     
     setLoading(true);
     try {
-      const response = await userApi.getUsers();
-      setUsers(response.data);
+      const response = await userApi.getAll();
+      setUsers(response.data?.data);
     } catch (error) {
       message.error('获取用户列表失败');
       console.error('获取用户列表失败:', error);
@@ -46,8 +46,8 @@ const UserPage: React.FC = () => {
     if (!isAuthenticated) return;
     
     try {
-      const response = await userApi.getRoles();
-      setRoles(response.data);
+      const response = await roleApi.getRoles();
+      setRoles(response.data?.data);
     } catch (error) {
       message.error('获取角色列表失败');
       console.error('获取角色列表失败:', error);
