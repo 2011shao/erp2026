@@ -12,69 +12,87 @@ datasource db {
 
 // 用户模型
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  password  String
-  role      String   @default("user")
-  shopId    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  userRoles UserRole[]
+  id               String             @id @default(cuid())
+  username         String             @unique
+  password         String
+  role             String             @default("user")
+  shopId           String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  userRoles        UserRole[]
   serialNumberLogs SerialNumberLog[]
+  CommissionRecord CommissionRecord[]
+  TransferOrder    TransferOrder[]
+  TransferLog      TransferLog[]
+  Stocktake        Stocktake[]
+  StocktakeLog     StocktakeLog[]
 }
 
 // 店铺模型
 model Shop {
-  id              String           @id @default(cuid())
-  name            String
-  address         String
-  phone           String
-  managerId       String
-  products        Product[]
-  salesOrders     SalesOrder[]
+  id               String            @id @default(cuid())
+  name             String
+  address          String
+  phone            String
+  managerId        String
+  products         Product[]
+  salesOrders      SalesOrder[]
   financialRecords FinancialRecord[]
-  serialNumbers   SerialNumber[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  serialNumbers    SerialNumber[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  PurchaseOrder    PurchaseOrder[]
+  PurchaseReturn   PurchaseReturn[]
+  Warehouse        Warehouse[]
+  TransferOrder    TransferOrder[]
+  Stocktake        Stocktake[]
 }
 
 // 商品变体表
 model ProductVariant {
-  id        String   @id @default(cuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  color     String
-  capacity  String
-  version   String
-  price     Decimal
-  costPrice Decimal
-  stock     Int
-  sku       String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String         @id @default(cuid())
+  productId     String
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color         String
+  capacity      String
+  version       String
+  price         Decimal
+  costPrice     Decimal
+  stock         Int
+  sku           String         @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   serialNumbers SerialNumber[]
 }
 
 // 商品模型
 model Product {
-  id          String         @id @default(cuid())
-  name        String
-  category    String // new, used, accessory, coupon, warranty, carrier_plan
-  brand       String
-  model       String
-  price       Decimal
-  costPrice   Decimal
-  stock       Int
-  shopId      String
-  shop        Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  warehouseId String?
-  warehouse   Warehouse?     @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  inventoryLogs InventoryLog[]
-  salesOrderItems SalesOrderItem[]
-  serialNumbers SerialNumber[]
-  variants     ProductVariant[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id                 String               @id @default(cuid())
+  name               String
+  category           String // new, used, accessory, coupon, warranty, carrier_plan
+  brand              String
+  model              String
+  price              Decimal
+  costPrice          Decimal
+  stock              Int
+  shopId             String
+  shop               Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  warehouseId        String?
+  warehouse          Warehouse?           @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  inventoryLogs      InventoryLog[]
+  salesOrderItems    SalesOrderItem[]
+  serialNumbers      SerialNumber[]
+  variants           ProductVariant[]
+  // 库存预警规则
+  minStock           Int?                 @default(10) // 最小库存阈值
+  alertLevel         String? // low, medium, high
+  alertEnabled       Boolean?             @default(true) // 是否启用预警
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  PurchaseOrderItem  PurchaseOrderItem[]
+  PurchaseReturnItem PurchaseReturnItem[]
+  TransferOrderItem  TransferOrderItem[]
+  StocktakeItem      StocktakeItem[]
 }
 
 // 库存变动记录
@@ -91,124 +109,127 @@ model InventoryLog {
 
 // 销售订单
 model SalesOrder {
-  id        String           @id @default(cuid())
-  shopId    String
-  shop      Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  totalAmount Decimal
-  status    String           @default("completed")
-  items     SalesOrderItem[]
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id               String             @id @default(cuid())
+  shopId           String
+  shop             Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  totalAmount      Decimal
+  status           String             @default("completed")
+  items            SalesOrderItem[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  CommissionRecord CommissionRecord[]
 }
 
 // 销售订单详情
 model SalesOrderItem {
-  id        String      @id @default(cuid())
-  orderId   String
-  order     SalesOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity  Int
-  price     Decimal
-  createdAt DateTime    @default(now())
+  id            String         @id @default(cuid())
+  orderId       String
+  order         SalesOrder     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity      Int
+  price         Decimal
+  createdAt     DateTime       @default(now())
   serialNumbers SerialNumber[]
 }
 
 // 财务记录
 model FinancialRecord {
-  id        String   @id @default(cuid())
-  shopId    String
-  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  amount    Decimal
-  type      String // income or expense
-  category  String
+  id          String   @id @default(cuid())
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  amount      Decimal
+  type        String // income or expense
+  category    String
   description String
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
 }
 
 // 权限表
 model Permission {
-  id          String   @id @default(cuid())
-  code        String   @unique // 权限编码
-  name        String   // 权限名称
-  description String?  // 权限描述
-  type        String   // 权限类型：menu, api, action
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String           @id @default(cuid())
+  code            String           @unique // 权限编码
+  name            String // 权限名称
+  description     String? // 权限描述
+  type            String // 权限类型：menu, api, action
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   rolePermissions RolePermission[]
 }
 
 // 角色表
 model Role {
-  id          String   @id @default(cuid())
-  name        String   @unique // 角色名称
-  description String?  // 角色描述
-  isSystem    Boolean  @default(false) // 是否系统内置角色
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String           @id @default(cuid())
+  name            String           @unique // 角色名称
+  description     String? // 角色描述
+  isSystem        Boolean          @default(false) // 是否系统内置角色
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   rolePermissions RolePermission[]
-  userRoles UserRole[]
+  userRoles       UserRole[]
 }
 
 // 角色权限关联表
 model RolePermission {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   roleId       String
   permissionId String
-  role         Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
   @@unique([roleId, permissionId])
 }
 
 // 用户角色关联表
 model UserRole {
-  id     String   @id @default(cuid())
+  id     String @id @default(cuid())
   userId String
   roleId String
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role   Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
   @@unique([userId, roleId])
 }
 
 // 串号管理表
 model SerialNumber {
-  id              String           @id @default(cuid())
-  serialNumber    String           @unique // IMEI/SN
-  productId       String
-  product         Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productVariantId String?
-  productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
-  status          String           @default("in_stock") // in_stock, sold, repairing, returned, scrapped, locked, returned_to_supplier, transferring, stocktaking
-  shopId          String
-  shop            Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  warehouseId     String?
-  warehouse       Warehouse?       @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  purchaseOrderId String?
-  purchaseOrderItemId String?
-  purchaseOrderItem   PurchaseOrderItem? @relation(fields: [purchaseOrderItemId], references: [id], onDelete: SetNull)
-  purchaseReturnId String?
+  id                   String              @id @default(cuid())
+  serialNumber         String              @unique // IMEI/SN
+  productId            String
+  product              Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productVariantId     String?
+  productVariant       ProductVariant?     @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
+  status               String              @default("in_stock") // in_stock, sold, repairing, returned, scrapped, locked, returned_to_supplier, transferring, stocktaking
+  shopId               String
+  shop                 Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  warehouseId          String?
+  warehouse            Warehouse?          @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  purchaseOrderId      String?
+  purchaseOrderItemId  String?
+  purchaseOrderItem    PurchaseOrderItem?  @relation(fields: [purchaseOrderItemId], references: [id], onDelete: SetNull)
+  purchaseReturnId     String?
   purchaseReturnItemId String?
   purchaseReturnItem   PurchaseReturnItem? @relation(fields: [purchaseReturnItemId], references: [id], onDelete: SetNull)
-  salesOrderId    String?
-  salesOrderItemId String?
-  salesOrderItem   SalesOrderItem? @relation(fields: [salesOrderItemId], references: [id], onDelete: SetNull)
-  transferOrderId String?
-  transferOrderItemId String?
-  transferOrderItem   TransferOrderItem? @relation(fields: [transferOrderItemId], references: [id], onDelete: SetNull)
-  stocktakeId String?
-  stocktakeItemId String?
-  stocktakeItem   StocktakeItem? @relation(fields: [stocktakeItemId], references: [id], onDelete: SetNull)
-  serviceTicketId String?
-  alertLevel      String?          // low, medium, high
-  alertMessage    String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  logs            SerialNumberLog[]
+  salesOrderId         String?
+  salesOrderItemId     String?
+  salesOrderItem       SalesOrderItem?     @relation(fields: [salesOrderItemId], references: [id], onDelete: SetNull)
+  transferOrderId      String?
+  transferOrderItemId  String?
+  transferOrderItem    TransferOrderItem?  @relation(fields: [transferOrderItemId], references: [id], onDelete: SetNull)
+  stocktakeId          String?
+  stocktakeItemId      String?
+  stocktakeItem        StocktakeItem?      @relation(fields: [stocktakeItemId], references: [id], onDelete: SetNull)
+  serviceTicketId      String?
+  alertLevel           String? // low, medium, high
+  alertMessage         String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  logs                 SerialNumberLog[]
 }
 
 // 串号生命周期日志表
 model SerialNumberLog {
-  id            String       @id @default(cuid())
+  id             String       @id @default(cuid())
   serialNumberId String
   serialNumber   SerialNumber @relation(fields: [serialNumberId], references: [id], onDelete: Cascade)
   oldStatus      String
@@ -235,182 +256,184 @@ model CommissionRule {
 
 // 提成记录表
 model CommissionRecord {
-  id        String      @id @default(cuid())
+  id        String     @id @default(cuid())
   orderId   String
-  order     SalesOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     SalesOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   userId    String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   amount    Decimal
-  status    String      @default("pending") // pending, approved, paid
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  status    String     @default("pending") // pending, approved, paid
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 // 采购订单表
 model PurchaseOrder {
-  id          String             @id @default(cuid())
-  shopId      String
-  shop        Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  supplierId  String
-  totalAmount Decimal
-  status      String             @default("pending") // pending, completed, cancelled
-  items       PurchaseOrderItem[]
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id             String              @id @default(cuid())
+  shopId         String
+  shop           Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  supplierId     String
+  totalAmount    Decimal
+  status         String              @default("pending") // pending, completed, cancelled
+  items          PurchaseOrderItem[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  PurchaseReturn PurchaseReturn[]
 }
 
 // 采购订单详情表
 model PurchaseOrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  order       PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity    Int
-  price       Decimal
-  createdAt   DateTime @default(now())
+  id            String         @id @default(cuid())
+  orderId       String
+  order         PurchaseOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity      Int
+  price         Decimal
+  createdAt     DateTime       @default(now())
   serialNumbers SerialNumber[]
 }
 
 // 采购退货表
 model PurchaseReturn {
-  id          String   @id @default(cuid())
+  id          String               @id @default(cuid())
   orderId     String
-  order       PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order       PurchaseOrder        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   shopId      String
-  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shop        Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
   reason      String
   totalAmount Decimal
-  status      String   @default("pending") // pending, approved, completed
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      String               @default("pending") // pending, approved, completed
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
   items       PurchaseReturnItem[]
 }
 
 // 采购退货详情表
 model PurchaseReturnItem {
-  id          String   @id @default(cuid())
-  returnId    String
-  return      PurchaseReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity    Int
-  price       Decimal
-  createdAt   DateTime @default(now())
+  id            String         @id @default(cuid())
+  returnId      String
+  return        PurchaseReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity      Int
+  price         Decimal
+  createdAt     DateTime       @default(now())
   serialNumbers SerialNumber[]
 }
 
 // 仓库表
 model Warehouse {
-  id          String   @id @default(cuid())
-  name        String
-  code        String   @unique
-  address     String
-  contactName String
-  contactPhone String
-  status      String   @default("active") // active, inactive
-  shopId      String
-  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  products    Product[]
-  serialNumbers SerialNumber[]
+  id                 String          @id @default(cuid())
+  name               String
+  code               String          @unique
+  address            String
+  contactName        String
+  contactPhone       String
+  status             String          @default("active") // active, inactive
+  shopId             String
+  shop               Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products           Product[]
+  serialNumbers      SerialNumber[]
   transferOrdersFrom TransferOrder[] @relation("FromWarehouse")
-  transferOrdersTo TransferOrder[] @relation("ToWarehouse")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  transferOrdersTo   TransferOrder[] @relation("ToWarehouse")
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  Stocktake          Stocktake[]
 }
 
 // 调拨订单表
 model TransferOrder {
-  id          String   @id @default(cuid())
+  id              String              @id @default(cuid())
   fromWarehouseId String
-  fromWarehouse   Warehouse @relation("FromWarehouse", fields: [fromWarehouseId], references: [id], onDelete: Cascade)
-  toWarehouseId String
-  toWarehouse   Warehouse @relation("ToWarehouse", fields: [toWarehouseId], references: [id], onDelete: Cascade)
-  shopId      String
-  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  operatorId  String
-  operator    User     @relation(fields: [operatorId], references: [id], onDelete: Cascade)
-  status      String   @default("pending") // pending, processing, completed, cancelled
-  reason      String
-  totalItems  Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  items       TransferOrderItem[]
-  logs        TransferLog[]
+  fromWarehouse   Warehouse           @relation("FromWarehouse", fields: [fromWarehouseId], references: [id], onDelete: Cascade)
+  toWarehouseId   String
+  toWarehouse     Warehouse           @relation("ToWarehouse", fields: [toWarehouseId], references: [id], onDelete: Cascade)
+  shopId          String
+  shop            Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  operatorId      String
+  operator        User                @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  status          String              @default("pending") // pending, processing, completed, cancelled
+  reason          String
+  totalItems      Int
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  items           TransferOrderItem[]
+  logs            TransferLog[]
 }
 
 // 调拨订单详情表
 model TransferOrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  order       TransferOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity    Int
-  createdAt   DateTime @default(now())
+  id            String         @id @default(cuid())
+  orderId       String
+  order         TransferOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity      Int
+  createdAt     DateTime       @default(now())
   serialNumbers SerialNumber[]
 }
 
 // 调拨日志表
 model TransferLog {
-  id          String   @id @default(cuid())
+  id              String        @id @default(cuid())
   transferOrderId String
   transferOrder   TransferOrder @relation(fields: [transferOrderId], references: [id], onDelete: Cascade)
-  oldStatus   String
-  newStatus   String
-  reason      String
-  operatorId  String
-  operator    User     @relation(fields: [operatorId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  oldStatus       String
+  newStatus       String
+  reason          String
+  operatorId      String
+  operator        User          @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
 }
 
 // 库存盘点表
 model Stocktake {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   shopId      String
-  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shop        Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
   warehouseId String
-  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  warehouse   Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
   operatorId  String
-  operator    User     @relation(fields: [operatorId], references: [id], onDelete: Cascade)
-  status      String   @default("in_progress") // in_progress, completed, cancelled
-  startDate   DateTime @default(now())
+  operator    User            @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  status      String          @default("in_progress") // in_progress, completed, cancelled
+  startDate   DateTime        @default(now())
   endDate     DateTime?
   totalItems  Int
   variance    Decimal
   notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   items       StocktakeItem[]
   logs        StocktakeLog[]
 }
 
 // 库存盘点详情表
 model StocktakeItem {
-  id          String   @id @default(cuid())
-  stocktakeId String
-  stocktake   Stocktake @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id            String         @id @default(cuid())
+  stocktakeId   String
+  stocktake     Stocktake      @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
   expectedStock Int
   actualStock   Int
   variance      Int
   unitPrice     Decimal
   varianceValue Decimal
   notes         String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime       @default(now())
   serialNumbers SerialNumber[]
 }
 
 // 库存盘点日志表
 model StocktakeLog {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   stocktakeId String
   stocktake   Stocktake @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
   oldStatus   String
   newStatus   String
   reason      String
   operatorId  String
-  operator    User     @relation(fields: [operatorId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  operator    User      @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
 }

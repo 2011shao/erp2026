@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { authenticateToken } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 import { validateTransferOrder } from '../utils/validators';
 import { logSerialNumberStatusChange } from '../utils/serialNumberUtils';
 
@@ -8,7 +8,7 @@ const router = Router();
 const prisma = new PrismaClient();
 
 // 应用认证中间件
-router.use(authenticateToken);
+router.use(authenticate);
 
 // 获取调拨订单列表
 router.get('/', async (req: Request, res: Response): Promise<void> => {
