@@ -20,7 +20,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.BACKEND_PORT || 8000;
+const PORT = process.env.BACKEND_PORT || 48888;
 
 // 中间件
 app.use(cors());
