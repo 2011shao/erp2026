@@ -26,7 +26,7 @@ const ReportPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await reportApi.getSalesTrend({ shopId: selectedShop });
-      setSalesTrend(response.data);
+      setSalesTrend(response.data?.data || []);
     } catch (error) {
       message.error('获取销售趋势失败');
       console.error('获取销售趋势失败:', error);
@@ -41,7 +41,7 @@ const ReportPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await reportApi.getInventoryStatus({ shopId: selectedShop });
-      setInventoryStatus(response.data);
+      setInventoryStatus(response.data?.data || []);
     } catch (error) {
       message.error('获取库存状态失败');
       console.error('获取库存状态失败:', error);
@@ -56,7 +56,7 @@ const ReportPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await reportApi.getFinancialAnalysis({ shopId: selectedShop });
-      setFinancialAnalysis(response.data);
+      setFinancialAnalysis(response.data?.data || []);
     } catch (error) {
       message.error('获取财务分析失败');
       console.error('获取财务分析失败:', error);
@@ -71,7 +71,7 @@ const ReportPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await reportApi.getShopComparison();
-      setShopComparison(response.data);
+      setShopComparison(response.data?.data || []);
     } catch (error) {
       message.error('获取店铺对比失败');
       console.error('获取店铺对比失败:', error);

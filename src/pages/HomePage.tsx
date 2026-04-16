@@ -22,8 +22,8 @@ const HomePage: React.FC = () => {
           shopApi.getAll(),
           productApi.getAll(),
         ]);
-        setShops(shopsRes.data || []);
-        setProducts(productsRes.data || []);
+        setShops(shopsRes.data?.data || []);
+        setProducts(productsRes.data?.data || []);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
