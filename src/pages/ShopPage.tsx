@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Card, Table, Tag, Button, Space, Modal, Form, Input, message } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { shopApi } from '../api';
+import { useAuthStore } from '../store/authStore';
 
 const ShopPage: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
   const [shops, setShops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -11,6 +13,11 @@ const ShopPage: React.FC = () => {
   const [form] = Form.useForm();
 
   const fetchShops = async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const response = await shopApi.getAll();
@@ -25,7 +32,7 @@ const ShopPage: React.FC = () => {
 
   useEffect(() => {
     fetchShops();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleAdd = () => {
     setEditingShop(null);

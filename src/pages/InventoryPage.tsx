@@ -2,12 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { Card, Table, Tag, Button, Space, Statistic, Row, Col } from 'antd';
 import { StockOutlined, WarningOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { inventoryApi } from '../api';
+import { useAuthStore } from '../store/authStore';
 
 const InventoryPage: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const response = await inventoryApi.getAll();
@@ -21,7 +28,7 @@ const InventoryPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [isAuthenticated]);
 
   const lowStockProducts = products.filter(p => Number(p.stock) <= 10);
   const totalStock = products.reduce((sum, p) => sum + Number(p.stock), 0);

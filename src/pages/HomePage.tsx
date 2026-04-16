@@ -2,14 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { Card, Row, Col, Statistic, Table, Tag } from 'antd';
 import { ShopOutlined, ShoppingOutlined, DollarOutlined, StockOutlined } from '@ant-design/icons';
 import { shopApi, productApi, financialApi } from '../api';
+import { useAuthStore } from '../store/authStore';
 
 const HomePage: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
   const [shops, setShops] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        return;
+      }
+      
       try {
         const [shopsRes, productsRes] = await Promise.all([
           shopApi.getAll(),
@@ -24,7 +31,7 @@ const HomePage: React.FC = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [isAuthenticated]);
 
   const columns = [
     {

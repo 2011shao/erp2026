@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Card, Table, Tag, Button, Space, Input, Select, Modal, Form, InputNumber, message } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { productApi, shopApi } from '../api';
+import { useAuthStore } from '../store/authStore';
 
 const { Option } = Select;
 
 const ProductPage: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
   const [products, setProducts] = useState<any[]>([]);
   const [shops, setShops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +17,11 @@ const ProductPage: React.FC = () => {
   const [form] = Form.useForm();
 
   const fetchData = async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const [productsRes, shopsRes] = await Promise.all([
@@ -33,7 +40,7 @@ const ProductPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [isAuthenticated]);
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchText.toLowerCase()) ||

@@ -2,12 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { Card, Table, Tag, Statistic, Row, Col } from 'antd';
 import { DollarOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import { financialApi } from '../api';
+import { useAuthStore } from '../store/authStore';
 
 const FinancialPage: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const response = await financialApi.getAll();
@@ -21,7 +28,7 @@ const FinancialPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [isAuthenticated]);
 
   const incomeRecords = records.filter(r => r.type === 'income');
   const expenseRecords = records.filter(r => r.type === 'expense');
