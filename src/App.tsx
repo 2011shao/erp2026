@@ -9,6 +9,12 @@ import ShopPage from './pages/ShopPage';
 import ProductPage from './pages/ProductPage';
 import InventoryPage from './pages/InventoryPage';
 import FinancialPage from './pages/FinancialPage';
+import SerialNumberPage from './pages/SerialNumberPage';
+import SalesPage from './pages/SalesPage';
+import PurchasePage from './pages/PurchasePage';
+import UserPage from './pages/UserPage';
+import RolePage from './pages/RolePage';
+import PermissionPage from './pages/PermissionPage';
 
 const { Header, Content, Sider } = Layout;
 
@@ -315,18 +321,18 @@ const App: React.FC = () => {
                 <Route path="/shops" element={<ShopPage />} />
                 <Route path="/products" element={<ProductPage />} />
                 <Route path="/inventory" element={<InventoryPage />} />
-                <Route path="/serial-numbers" element={<SimplePage title="串号管理" />} />
-                <Route path="/sales" element={<SimplePage title="销售管理" />} />
-                <Route path="/purchases" element={<SimplePage title="采购管理" />} />
+                <Route path="/serial-numbers" element={<SerialNumberPage />} />
+                <Route path="/sales" element={<SalesPage />} />
+                <Route path="/purchases" element={<PurchasePage />} />
                 <Route path="/warehouses" element={<SimplePage title="仓库管理" />} />
                 <Route path="/transfers" element={<SimplePage title="调拨管理" />} />
                 <Route path="/stocktakes" element={<SimplePage title="库存盘点" />} />
                 <Route path="/cashier" element={<SimplePage title="收银台" />} />
                 <Route path="/financial" element={<FinancialPage />} />
                 <Route path="/reports" element={<SimplePage title="报表分析" />} />
-                <Route path="/users" element={<SimplePage title="用户管理" />} />
-                <Route path="/settings/roles" element={<SimplePage title="角色管理" />} />
-                <Route path="/settings/permissions" element={<SimplePage title="权限管理" />} />
+                <Route path="/users" element={<UserPage />} />
+                <Route path="/settings/roles" element={<RolePage />} />
+                <Route path="/settings/permissions" element={<PermissionPage />} />
               </Routes>
             </Content>
           </Layout>

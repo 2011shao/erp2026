@@ -499,6 +499,16 @@ export const serialNumberApi = {
   clearAlert: (id: string) => api.patch(`/serial-numbers/${id}/clear-alert`),
 };
 
+export interface Supplier {
+  id: string;
+  name: string;
+  contactName: string;
+  contactPhone: string;
+  address: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const purchaseApi = {
   getAll: (params?: { 
     page?: number; 
@@ -521,6 +531,7 @@ export const purchaseApi = {
   unbindSerialNumber: (id: string, serialNumberId: string) => 
     api.delete(`/purchases/${id}/serial-numbers/${serialNumberId}`),
   getSerialNumbers: (id: string) => api.get<SerialNumber[]>(`/purchases/${id}/serial-numbers`),
+  getSuppliers: () => api.get<Supplier[]>('/suppliers'),
 };
 
 export interface Warehouse {
@@ -722,6 +733,43 @@ export const stocktakeApi = {
   cancel: (id: string, data: { reason?: string }) => 
     api.put(`/stocktakes/${id}/cancel`, data),
   delete: (id: string) => api.delete(`/stocktakes/${id}`),
+};
+
+export interface Role {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Permission {
+  id: string;
+  name: string;
+  code: string;
+  parentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  children?: Permission[];
+}
+
+export const roleApi = {
+  getRoles: () => api.get<Role[]>('/roles'),
+  getRole: (id: string) => api.get<Role>(`/roles/${id}`),
+  createRole: (data: { name: string; description: string }) => api.post<Role>('/roles', data),
+  updateRole: (id: string, data: { name?: string; description?: string }) => api.put<Role>(`/roles/${id}`, data),
+  deleteRole: (id: string) => api.delete(`/roles/${id}`),
+  getPermissions: () => api.get<Permission[]>('/permissions'),
+  getRolePermissions: (roleId: string) => api.get<string[]>(`/roles/${roleId}/permissions`),
+  updateRolePermissions: (roleId: string, permissionIds: string[]) => api.put(`/roles/${roleId}/permissions`, { permissionIds }),
+};
+
+export const permissionApi = {
+  getPermissions: () => api.get<Permission[]>('/permissions'),
+  getPermission: (id: string) => api.get<Permission>(`/permissions/${id}`),
+  createPermission: (data: { name: string; code: string; parentId?: string | null }) => api.post<Permission>('/permissions', data),
+  updatePermission: (id: string, data: { name?: string; code?: string; parentId?: string | null }) => api.put<Permission>(`/permissions/${id}`, data),
+  deletePermission: (id: string) => api.delete(`/permissions/${id}`),
 };
 
 export default api;
