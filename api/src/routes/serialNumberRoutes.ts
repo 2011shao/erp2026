@@ -6,7 +6,7 @@ import { authenticate, AuthenticatedRequest } from '../middleware/auth';
 const router = express.Router();
 
 // 获取串号列表
-router.get('/serial-numbers', authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.get('/', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const { page = 1, limit = 10, search, status, productId, shopId } = req.query;
 
@@ -58,7 +58,7 @@ router.get('/serial-numbers', authenticate, async (req: AuthenticatedRequest, re
 });
 
 // 获取串号详情
-router.get('/serial-numbers/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.get('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const { id } = req.params;
 
@@ -93,7 +93,7 @@ router.get('/serial-numbers/:id', authenticate, async (req: AuthenticatedRequest
 });
 
 // 创建串号
-router.post('/serial-numbers', authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.post('/', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const { serialNumber, productId, shopId } = req.body;
 
@@ -149,7 +149,7 @@ router.post('/serial-numbers', authenticate, async (req: AuthenticatedRequest, r
 });
 
 // 批量导入串号
-router.post('/serial-numbers/import', authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.post('/import', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const { serialNumbers, productId, shopId } = req.body;
 
@@ -213,7 +213,7 @@ router.post('/serial-numbers/import', authenticate, async (req: AuthenticatedReq
 });
 
 // 更新串号状态
-router.patch('/serial-numbers/:id/status', authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/status', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const { id } = req.params;
     const { status, reason } = req.body;
@@ -265,7 +265,7 @@ router.patch('/serial-numbers/:id/status', authenticate, async (req: Authenticat
 });
 
 // 删除串号
-router.delete('/serial-numbers/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const { id } = req.params;
 
@@ -291,7 +291,7 @@ router.delete('/serial-numbers/:id', authenticate, async (req: AuthenticatedRequ
 });
 
 // 导出串号
-router.get('/serial-numbers/export', authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.get('/export', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const { status, productId, shopId } = req.query;
 
@@ -346,7 +346,7 @@ router.get('/serial-numbers/export', authenticate, async (req: AuthenticatedRequ
 });
 
 // 获取串号库存预警
-router.get('/serial-numbers/alerts', authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.get('/alerts', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const { shopId } = req.query;
 
@@ -433,7 +433,7 @@ router.get('/serial-numbers/alerts', authenticate, async (req: AuthenticatedRequ
 });
 
 // 清除串号预警
-router.patch('/serial-numbers/:id/clear-alert', authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.patch('/:id/clear-alert', authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const { id } = req.params;
 
