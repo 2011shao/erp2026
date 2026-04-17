@@ -18,7 +18,7 @@ const InventoryPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await inventoryApi.getAll();
-      setProducts(response.data?.data || []);
+      setProducts(response.data || []);
     } catch (error) {
       console.error('Error fetching inventory:', error);
     } finally {
