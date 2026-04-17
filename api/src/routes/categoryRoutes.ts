@@ -226,14 +226,14 @@ router.delete('/:id', authenticate, async (req, res, next) => {
       throw new ApiError(404, 'Category not found');
     }
 
-    const childCount = await prisma.category.count({ where: { parentId: id } });
-    if (childCount > 0) {
-      throw new ApiError(400, 'Cannot delete category with child categories');
-    }
-
     const productCount = await prisma.product.count({ where: { categoryId: id } });
     if (productCount > 0) {
       throw new ApiError(400, 'Cannot delete category with products');
+    }
+
+    const childCount = await prisma.category.count({ where: { parentId: id } });
+    if (childCount > 0) {
+      throw new ApiError(400, 'Cannot delete category with subcategories');
     }
 
     await prisma.category.delete({ where: { id } });
@@ -241,6 +241,164 @@ router.delete('/:id', authenticate, async (req, res, next) => {
     res.json({
       success: true,
       message: 'Category deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 导出分类为CSV
+router.get('/export', authenticate, async (req, res, next) => {
+  try {
+    const categories = await prisma.category.findMany({
+      include: {
+        parent: {
+          select: { name: true }
+        }
+      },
+      orderBy: [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' }
+      ]
+    });
+
+    // 生成 CSV 格式
+    const headers = ['分类名称', '编码', '上级分类', '排序', '状态', '创建时间'];
+    const rows = categories.map(category => [
+      category.name,
+      category.code,
+      category.parent?.name || '',
+      category.sortOrder,
+      category.isActive ? '启用' : '禁用',
+      category.createdAt.toISOString()
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=categories-${new Date().toISOString().split('T')[0]}.csv`);
+    res.send(csvContent);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 导入分类
+router.post('/import', authenticate, async (req, res, next) => {
+  try {
+    const { categories } = req.body;
+
+    if (!Array.isArray(categories)) {
+      throw new ApiError(400, 'Categories array is required');
+    }
+
+    const importedCategories = [];
+    const errors = [];
+
+    // 先创建所有顶级分类，再创建子分类
+    const topLevelCategories = categories.filter(cat => !cat.parentName);
+    const subCategories = categories.filter(cat => cat.parentName);
+
+    // 创建顶级分类
+    for (const categoryData of topLevelCategories) {
+      try {
+        const { name, code, sortOrder, isActive } = categoryData;
+
+        if (!name || !code) {
+          errors.push({ category: categoryData, error: 'Name and code are required' });
+          continue;
+        }
+
+        // 检查分类编码是否已存在
+        const existingCategory = await prisma.category.findUnique({ where: { code } });
+        if (existingCategory) {
+          // 更新现有分类
+          const updatedCategory = await prisma.category.update({
+            where: { code },
+            data: {
+              name,
+              sortOrder: sortOrder || 0,
+              isActive: isActive !== undefined ? isActive : true
+            }
+          });
+          importedCategories.push({ ...updatedCategory, status: 'updated' });
+        } else {
+          // 创建新分类
+          const newCategory = await prisma.category.create({
+            data: {
+              name,
+              code,
+              sortOrder: sortOrder || 0,
+              isActive: isActive !== undefined ? isActive : true
+            }
+          });
+          importedCategories.push({ ...newCategory, status: 'created' });
+        }
+      } catch (error) {
+        errors.push({ category: categoryData, error: (error as Error).message });
+      }
+    }
+
+    // 创建子分类
+    for (const categoryData of subCategories) {
+      try {
+        const { name, code, parentName, sortOrder, isActive } = categoryData;
+
+        if (!name || !code || !parentName) {
+          errors.push({ category: categoryData, error: 'Name, code and parentName are required' });
+          continue;
+        }
+
+        // 查找父分类
+        const parentCategory = await prisma.category.findFirst({ where: { name: parentName } });
+        if (!parentCategory) {
+          errors.push({ category: categoryData, error: `Parent category ${parentName} not found` });
+          continue;
+        }
+
+        // 检查分类编码是否已存在
+        const existingCategory = await prisma.category.findUnique({ where: { code } });
+        if (existingCategory) {
+          // 更新现有分类
+          const updatedCategory = await prisma.category.update({
+            where: { code },
+            data: {
+              name,
+              parentId: parentCategory.id,
+              sortOrder: sortOrder || 0,
+              isActive: isActive !== undefined ? isActive : true
+            }
+          });
+          importedCategories.push({ ...updatedCategory, status: 'updated' });
+        } else {
+          // 创建新分类
+          const newCategory = await prisma.category.create({
+            data: {
+              name,
+              code,
+              parentId: parentCategory.id,
+              sortOrder: sortOrder || 0,
+              isActive: isActive !== undefined ? isActive : true
+            }
+          });
+          importedCategories.push({ ...newCategory, status: 'created' });
+        }
+      } catch (error) {
+        errors.push({ category: categoryData, error: (error as Error).message });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        imported: importedCategories.length,
+        failed: errors.length,
+        importedCategories,
+        errors
+      }
     });
   } catch (error) {
     next(error);

@@ -78,6 +78,10 @@ model Category {
   isActive    Boolean     @default(true)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+
+  @@index([isActive, sortOrder, createdAt])
+  @@index([parentId, isActive, sortOrder])
+  @@index([name])
 }
 
 // 品牌模型
@@ -91,6 +95,9 @@ model Brand {
   products   Product[]
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+
+  @@index([isActive, sortOrder, createdAt])
+  @@index([name])
 }
 
 // 商品模型
@@ -125,6 +132,12 @@ model Product {
   PurchaseReturnItem PurchaseReturnItem[]
   TransferOrderItem  TransferOrderItem[]
   StocktakeItem      StocktakeItem[]
+
+  @@index([categoryId, shopId])
+  @@index([brandId, shopId])
+  @@index([shopId, stock])
+  @@index([name, model])
+  @@index([createdAt, shopId])
 }
 
 // 库存变动记录

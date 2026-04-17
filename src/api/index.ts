@@ -825,6 +825,8 @@ export const categoryApi = {
   update: (id: string, data: Partial<Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'parent' | 'children' | 'products'>>) => 
     api.put<Category>(`/categories/${id}`, data),
   delete: (id: string) => api.delete(`/categories/${id}`),
+  export: () => api.get('/categories/export'),
+  import: (data: { categories: any[] }) => api.post('/categories/import', data),
 };
 
 export const brandApi = {
@@ -840,6 +842,8 @@ export const brandApi = {
   update: (id: string, data: Partial<Omit<Brand, 'id' | 'createdAt' | 'updatedAt' | 'products'>>) => 
     api.put<Brand>(`/brands/${id}`, data),
   delete: (id: string) => api.delete(`/brands/${id}`),
+  export: () => api.get('/brands/export'),
+  import: (data: { brands: any[] }) => api.post('/brands/import', data),
 };
 
 export default api;

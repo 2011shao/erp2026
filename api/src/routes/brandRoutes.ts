@@ -186,4 +186,105 @@ router.delete('/:id', authenticate, async (req, res, next) => {
   }
 });
 
+// 导出品牌为CSV
+router.get('/export', authenticate, async (req, res, next) => {
+  try {
+    const brands = await prisma.brand.findMany({
+      orderBy: [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' }
+      ]
+    });
+
+    // 生成 CSV 格式
+    const headers = ['品牌名称', '编码', 'Logo', '排序', '状态', '创建时间'];
+    const rows = brands.map(brand => [
+      brand.name,
+      brand.code,
+      brand.logo || '',
+      brand.sortOrder,
+      brand.isActive ? '启用' : '禁用',
+      brand.createdAt.toISOString()
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=brands-${new Date().toISOString().split('T')[0]}.csv`);
+    res.send(csvContent);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 导入品牌
+router.post('/import', authenticate, async (req, res, next) => {
+  try {
+    const { brands } = req.body;
+
+    if (!Array.isArray(brands)) {
+      throw new ApiError(400, 'Brands array is required');
+    }
+
+    const importedBrands = [];
+    const errors = [];
+
+    for (const brandData of brands) {
+      try {
+        const { name, code, logo, sortOrder, isActive } = brandData;
+
+        if (!name || !code) {
+          errors.push({ brand: brandData, error: 'Name and code are required' });
+          continue;
+        }
+
+        // 检查品牌编码是否已存在
+        const existingBrand = await prisma.brand.findUnique({ where: { code } });
+        if (existingBrand) {
+          // 更新现有品牌
+          const updatedBrand = await prisma.brand.update({
+            where: { code },
+            data: {
+              name,
+              logo,
+              sortOrder: sortOrder || 0,
+              isActive: isActive !== undefined ? isActive : true
+            }
+          });
+          importedBrands.push({ ...updatedBrand, status: 'updated' });
+        } else {
+          // 创建新品牌
+          const newBrand = await prisma.brand.create({
+            data: {
+              name,
+              code,
+              logo,
+              sortOrder: sortOrder || 0,
+              isActive: isActive !== undefined ? isActive : true
+            }
+          });
+          importedBrands.push({ ...newBrand, status: 'created' });
+        }
+      } catch (error) {
+        errors.push({ brand: brandData, error: (error as Error).message });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        imported: importedBrands.length,
+        failed: errors.length,
+        importedBrands,
+        errors
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
