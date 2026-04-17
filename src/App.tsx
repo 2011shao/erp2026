@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout, Menu, Button, Form, Input, Avatar, Dropdown, Breadcrumb, ConfigProvider, theme, Modal } from 'antd';
 import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
 import { Link, Routes, Route, useLocation } from 'react-router-dom';
@@ -31,6 +31,19 @@ const App: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [form] = Form.useForm();
   const location = useLocation();
+
+  // 监听token失效事件
+  useEffect(() => {
+    const handleTokenExpired = () => {
+      setIsLoginModalOpen(true);
+    };
+
+    window.addEventListener('tokenExpired', handleTokenExpired);
+
+    return () => {
+      window.removeEventListener('tokenExpired', handleTokenExpired);
+    };
+  }, []);
 
   const handleLogin = async () => {
     try {

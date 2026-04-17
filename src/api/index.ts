@@ -64,11 +64,13 @@ class ApiClient {
         const errorMessage = error.response?.data?.error || error.message || 'Request failed';
         
         // 检测token失效错误
-        if (errorMessage.includes('invalid session token') || errorMessage.includes('Token expired') || errorMessage.includes('Unauthorized')) {
+        if (errorMessage.includes('invalid session token') || errorMessage.includes('Token expired') || errorMessage.includes('Unauthorized') || errorMessage.includes('Invalid or expired token')) {
           // 清除token
           this.clearToken();
-          // 跳转到登录页面
-          window.location.href = '/login';
+          // 触发登录模态框显示
+          // 这里通过自定义事件来通知App组件显示登录模态框
+          const event = new CustomEvent('tokenExpired');
+          window.dispatchEvent(event);
         }
         
         return Promise.reject(new Error(errorMessage));
