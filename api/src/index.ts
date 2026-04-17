@@ -16,6 +16,7 @@ import roleRoutes from './routes/roleRoutes';
 import permissionRoutes from './routes/permissionRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import brandRoutes from './routes/brandRoutes';
+import serialNumberRoutes from './routes/serialNumberRoutes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 // 加载环境变量
@@ -50,6 +51,7 @@ app.use('/api', roleRoutes);
 app.use('/api', permissionRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/brands', brandRoutes);
+app.use('/api/serial-numbers', serialNumberRoutes);
 
 // 404 处理
 app.use(notFoundHandler);

@@ -62,6 +62,15 @@ class ApiClient {
       (error) => {
         console.log('Error response:', error);
         const errorMessage = error.response?.data?.error || error.message || 'Request failed';
+        
+        // 检测token失效错误
+        if (errorMessage.includes('invalid session token') || errorMessage.includes('Token expired') || errorMessage.includes('Unauthorized')) {
+          // 清除token
+          this.clearToken();
+          // 跳转到登录页面
+          window.location.href = '/login';
+        }
+        
         return Promise.reject(new Error(errorMessage));
       }
     );
