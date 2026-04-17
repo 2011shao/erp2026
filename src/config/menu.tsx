@@ -82,14 +82,23 @@ export const menuConfig: MenuItem[] = [
     icon: <StockOutlined />,
     label: '库存管理',
     path: '/inventory',
-    permission: 'inventory.manage'
-  },
-  {
-    key: '4-1',
-    icon: <TagsOutlined />,
-    label: '串号管理',
-    path: '/serial-numbers',
-    permission: 'serialNumber.manage'
+    permission: 'inventory.manage',
+    children: [
+      {
+        key: '4-1',
+        icon: <StockOutlined />,
+        label: '库存列表',
+        path: '/inventory',
+        permission: 'inventory.view'
+      },
+      {
+        key: '4-2',
+        icon: <TagsOutlined />,
+        label: '串号管理',
+        path: '/serial-numbers',
+        permission: 'serialNumber.manage'
+      }
+    ]
   },
   {
     key: '5',

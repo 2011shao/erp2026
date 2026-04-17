@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Table, Tag, Button, Space, Input, Select, Modal, Form, message } from 'antd';
-import { SearchOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { SearchOutlined, EditOutlined, DeleteOutlined, PlusOutlined, HistoryOutlined } from '@ant-design/icons';
 import { serialNumberApi, productApi, shopApi } from '../api';
 import { useAuthStore } from '../store/authStore';
 
@@ -18,6 +18,14 @@ const SerialNumberPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<string[]>([]);
   const [labelModalVisible, setLabelModalVisible] = useState(false);
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [statusReason, setStatusReason] = useState('');
+  const [logsModalVisible, setLogsModalVisible] = useState(false);
+  const [currentSerialNumber, setCurrentSerialNumber] = useState<any>(null);
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importForm] = Form.useForm();
+  const [serialNumbersText, setSerialNumbersText] = useState('');
   const [form] = Form.useForm();
 
   const fetchData = async () => {
@@ -206,6 +214,95 @@ const SerialNumberPage: React.FC = () => {
     setLabelModalVisible(false);
   };
 
+  const setStatus = (value: string) => {
+    setSelectedStatus(value);
+  };
+
+  const handleBatchStatusUpdate = async () => {
+    if (!selectedStatus || !statusReason) {
+      message.error('请选择状态和填写原因');
+      return;
+    }
+    
+    try {
+      message.loading('更新中...');
+      
+      // 批量更新串号状态
+      const promises = selectedSerialNumbers.map(id => 
+        serialNumberApi.updateStatus(id, { status: selectedStatus, reason: statusReason })
+      );
+      
+      await Promise.all(promises);
+      
+      message.success('批量更新成功');
+      setStatusModalVisible(false);
+      setSelectedStatus('');
+      setStatusReason('');
+      fetchData();
+    } catch (error) {
+      message.error('批量更新失败');
+    }
+  };
+
+  const handleViewLogs = async (serialNumberId: string) => {
+    try {
+      message.loading('获取日志中...');
+      const response = await serialNumberApi.getById(serialNumberId);
+      setCurrentSerialNumber(response.data);
+      setLogsModalVisible(true);
+    } catch (error) {
+      message.error('获取日志失败');
+    }
+  };
+
+  const handleImport = () => {
+    setImportModalVisible(true);
+    importForm.resetFields();
+    setSerialNumbersText('');
+  };
+
+  const handleImportSubmit = async (values: any) => {
+    try {
+      message.loading('导入中...');
+      const serialNumbers = serialNumbersText
+        .split('\n')
+        .map((s: string) => s.trim())
+        .filter((s: string) => s);
+      
+      await serialNumberApi.import({
+        serialNumbers,
+        productId: values.productId,
+        shopId: values.shopId
+      });
+      
+      message.success('导入成功');
+      setImportModalVisible(false);
+      fetchData();
+    } catch (error) {
+      message.error('导入失败');
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      message.loading('导出中...');
+      const response = await serialNumberApi.export();
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `串号导出_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      message.success('导出成功');
+    } catch (error) {
+      message.error('导出失败');
+    }
+  };
+
   const columns = [
     {
       title: '串号',
@@ -287,6 +384,13 @@ const SerialNumberPage: React.FC = () => {
           </Button>
           <Button
             type="link"
+            icon={<HistoryOutlined />}
+            onClick={() => handleViewLogs(record.id)}
+          >
+            查看日志
+          </Button>
+          <Button
+            type="link"
             danger
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
@@ -317,6 +421,25 @@ const SerialNumberPage: React.FC = () => {
         title="串号管理"
         extra={
           <Space>
+            <Button 
+              type="default" 
+              onClick={handleImport}
+            >
+              导入串号
+            </Button>
+            <Button 
+              type="default" 
+              onClick={handleExport}
+            >
+              导出串号
+            </Button>
+            <Button 
+              type="default" 
+              disabled={selectedSerialNumbers.length === 0}
+              onClick={() => setStatusModalVisible(true)}
+            >
+              批量更新状态
+            </Button>
             <Button 
               type="default" 
               disabled={selectedSerialNumbers.length === 0}
@@ -423,6 +546,147 @@ const SerialNumberPage: React.FC = () => {
                 </Option>
               ))}
             </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="批量更新状态"
+        open={statusModalVisible}
+        onOk={handleBatchStatusUpdate}
+        onCancel={() => setStatusModalVisible(false)}
+        width={500}
+      >
+        <div style={{ padding: '20px 0' }}>
+          <p>已选择 {selectedSerialNumbers.length} 个串号</p>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8 }}>选择状态：</label>
+            <Select
+              style={{ width: '100%' }}
+              value={selectedStatus}
+              onChange={setStatus}
+              placeholder="请选择状态"
+            >
+              {statusOptions.filter(option => option.value).map(option => (
+                <Option key={option.value} value={option.value}>
+                  {option.label}
+                </Option>
+              ))}
+            </Select>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8 }}>更新原因：</label>
+            <Input.TextArea
+              style={{ width: '100%' }}
+              value={statusReason}
+              onChange={(e) => setStatusReason(e.target.value)}
+              placeholder="请填写更新原因"
+              rows={4}
+            />
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        title="串号生命周期日志"
+        open={logsModalVisible}
+        onCancel={() => setLogsModalVisible(false)}
+        width={800}
+      >
+        {currentSerialNumber && (
+          <div>
+            <div style={{ marginBottom: 20, padding: 16, backgroundColor: '#f5f5f5', borderRadius: 8 }}>
+              <h3>{currentSerialNumber.serialNumber}</h3>
+              <p>商品：{currentSerialNumber.product?.name || '未知'}</p>
+              <p>当前状态：{getStatusText(currentSerialNumber.status)}</p>
+            </div>
+            <Table
+              columns={[
+                {
+                  title: '操作时间',
+                  dataIndex: 'createdAt',
+                  key: 'createdAt',
+                  render: (date: string) => new Date(date).toLocaleString('zh-CN'),
+                },
+                {
+                  title: '操作前状态',
+                  dataIndex: 'oldStatus',
+                  key: 'oldStatus',
+                  render: (status: string) => getStatusText(status),
+                },
+                {
+                  title: '操作后状态',
+                  dataIndex: 'newStatus',
+                  key: 'newStatus',
+                  render: (status: string) => getStatusText(status),
+                },
+                {
+                  title: '操作原因',
+                  dataIndex: 'reason',
+                  key: 'reason',
+                },
+                {
+                  title: '操作人',
+                  dataIndex: ['operator', 'username'],
+                  key: 'operator',
+                  render: (username: string) => username || '系统',
+                },
+              ]}
+              dataSource={currentSerialNumber.logs || []}
+              rowKey="id"
+              pagination={{ pageSize: 10 }}
+            />
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        title="导入串号"
+        open={importModalVisible}
+        onOk={() => importForm.submit()}
+        onCancel={() => setImportModalVisible(false)}
+        width={600}
+      >
+        <Form form={importForm} layout="vertical" onFinish={handleImportSubmit}>
+          <Form.Item
+            name="productId"
+            label="商品"
+            rules={[{ required: true, message: '请选择商品' }]}
+          >
+            <Select placeholder="请选择商品">
+              {products.map(product => (
+                <Option key={product.id} value={product.id}>
+                  {product.name} ({product.brand} {product.model})
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="shopId"
+            label="店铺"
+            rules={[{ required: true, message: '请选择店铺' }]}
+          >
+            <Select placeholder="请选择店铺">
+              {shops.map(shop => (
+                <Option key={shop.id} value={shop.id}>
+                  {shop.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            label="串号列表"
+            rules={[{ required: true, message: '请输入串号列表' }]}
+          >
+            <Input.TextArea
+              value={serialNumbersText}
+              onChange={(e) => setSerialNumbersText(e.target.value)}
+              placeholder="请输入串号，每行一个"
+              rows={10}
+            />
+            <div style={{ marginTop: 8, fontSize: 12, color: '#999' }}>
+              提示：请每行输入一个串号，系统会自动过滤空行和重复串号
+            </div>
           </Form.Item>
         </Form>
       </Modal>

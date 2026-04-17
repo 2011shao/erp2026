@@ -20,7 +20,11 @@ router.get('/', authenticate, async (req, res, next) => {
       where,
       skip,
       take: limit,
-      include: { shop: { select: { id: true, name: true } } },
+      include: { 
+        shop: { select: { id: true, name: true } },
+        brand: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } }
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -63,7 +67,9 @@ router.get('/alerts', authenticate, async (req, res, next) => {
       where,
       include: { 
         shop: { select: { id: true, name: true } },
-        warehouse: { select: { id: true, name: true } }
+        warehouse: { select: { id: true, name: true } },
+        brand: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } }
       },
       orderBy: { stock: 'asc' },
     });

@@ -188,8 +188,14 @@ export interface Shop {
 export interface Product {
   id: string;
   name: string;
-  category: string;
-  brand: string;
+  category?: {
+    id: string;
+    name: string;
+  };
+  brand?: {
+    id: string;
+    name: string;
+  };
   model: string;
   price: number;
   costPrice: number;
