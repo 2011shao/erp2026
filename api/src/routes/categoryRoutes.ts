@@ -7,6 +7,38 @@ const router = express.Router();
 
 // 获取分类列表（树形结构）
 router.get('/', authenticate, async (req, res, next) => {
+  // 处理 /categories 路由
+  try {
+    const categories = await prisma.category.findMany({
+      where: {
+        isActive: true
+      },
+      include: {
+        children: {
+          where: {
+            isActive: true
+          }
+        }
+      },
+      orderBy: [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' }
+      ]
+    });
+
+    const rootCategories = categories.filter(cat => !cat.parentId);
+
+    res.json({
+      success: true,
+      data: rootCategories
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 获取分类树形结构（与 / 相同，为了兼容前端）
+router.get('/tree', authenticate, async (req, res, next) => {
   try {
     const categories = await prisma.category.findMany({
       where: {

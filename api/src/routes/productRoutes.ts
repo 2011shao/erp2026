@@ -19,6 +19,7 @@ router.get('/', authenticate, async (req, res, next) => {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { brand: { contains: search, mode: 'insensitive' } },
+        { brandLegacy: { contains: search, mode: 'insensitive' } },
         { model: { contains: search, mode: 'insensitive' } },
       ];
     }
@@ -30,7 +31,11 @@ router.get('/', authenticate, async (req, res, next) => {
         where,
         skip,
         take: limit,
-        include: { shop: { select: { id: true, name: true } } },
+        include: { 
+          shop: { select: { id: true, name: true } },
+          category: { select: { id: true, name: true } },
+          brand: { select: { id: true, name: true } }
+        },
         orderBy: { createdAt: 'desc' },
       }),
       prisma.product.count({ where }),
@@ -92,22 +97,24 @@ router.get('/:id', authenticate, async (req, res, next) => {
 
 router.post('/', authenticate, async (req, res, next) => {
   try {
-    const { name, category, brand, model, price, costPrice, stock, shopId } = req.body;
+    const { name, category, brand, model, price, costPrice, stock, shopId, categoryId, brandId } = req.body;
 
-    if (!name || !category || !price || !costPrice || stock === undefined || !shopId) {
+    if (!name || !price || !costPrice || stock === undefined || !shopId) {
       throw new ApiError(400, 'Missing required fields');
     }
 
     const product = await prisma.product.create({
       data: {
         name,
-        category,
+        category: category || '',
         brand: brand || '',
         model: model || '',
         price,
         costPrice,
         stock,
         shopId,
+        categoryId,
+        brandId,
       },
     });
 
@@ -148,7 +155,7 @@ router.post('/batch', authenticate, async (req, res, next) => {
 router.put('/:id', authenticate, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, category, brand, model, price, costPrice, stock, shopId } = req.body;
+    const { name, category, brand, model, price, costPrice, stock, shopId, categoryId, brandId } = req.body;
 
     const product = await prisma.product.update({
       where: { id },
@@ -161,6 +168,8 @@ router.put('/:id', authenticate, async (req, res, next) => {
         costPrice,
         stock,
         shopId,
+        categoryId,
+        brandId,
       },
     });
 

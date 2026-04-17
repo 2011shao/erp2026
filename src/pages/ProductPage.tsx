@@ -61,7 +61,8 @@ const ProductPage: React.FC = () => {
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchText.toLowerCase()) ||
-    p.brand.toLowerCase().includes(searchText.toLowerCase())
+    (p.brand && p.brand.toLowerCase().includes(searchText.toLowerCase())) ||
+    (p.brandLegacy && p.brandLegacy.toLowerCase().includes(searchText.toLowerCase()))
   );
 
   const handleAdd = () => {
