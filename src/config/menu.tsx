@@ -60,6 +60,20 @@ export const menuConfig: MenuItem[] = [
         label: '添加商品',
         path: '/products/add',
         permission: 'product.create'
+      },
+      {
+        key: '3-3',
+        icon: <TagsOutlined />,
+        label: '分类管理',
+        path: '/categories',
+        permission: 'product.manage'
+      },
+      {
+        key: '3-4',
+        icon: <TagsOutlined />,
+        label: '品牌管理',
+        path: '/brands',
+        permission: 'product.manage'
       }
     ]
   },

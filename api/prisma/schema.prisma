@@ -65,12 +65,44 @@ model ProductVariant {
   serialNumbers SerialNumber[]
 }
 
+// 分类模型（支持二级分类）
+model Category {
+  id          String      @id @default(cuid())
+  name        String
+  code        String      @unique
+  parentId    String?
+  parent      Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Category[]  @relation("CategoryHierarchy")
+  products    Product[]
+  sortOrder   Int         @default(0)
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// 品牌模型
+model Brand {
+  id         String    @id @default(cuid())
+  name       String
+  code       String    @unique
+  logo       String?
+  sortOrder  Int       @default(0)
+  isActive   Boolean   @default(true)
+  products   Product[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
 // 商品模型
 model Product {
   id                 String               @id @default(cuid())
   name               String
-  category           String // new, used, accessory, coupon, warranty, carrier_plan
-  brand              String
+  categoryId         String?
+  category           Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  brandId            String?
+  brand              Brand?               @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  categoryLegacy     String? // 保留原字段用于兼容
+  brandLegacy        String? // 保留原字段用于兼容
   model              String
   price              Decimal
   costPrice          Decimal

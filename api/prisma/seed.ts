@@ -60,13 +60,115 @@ async function main() {
 
   console.log('✅ 创建示例店铺');
 
+  // 创建示例分类
+  const categories = [
+    {
+      id: 'cat-phone',
+      name: '手机',
+      code: 'phone',
+      sortOrder: 1,
+      isActive: true,
+    },
+    {
+      id: 'cat-computer',
+      name: '电脑',
+      code: 'computer',
+      sortOrder: 2,
+      isActive: true,
+    },
+    {
+      id: 'cat-tablet',
+      name: '平板',
+      code: 'tablet',
+      sortOrder: 3,
+      isActive: true,
+    },
+    {
+      id: 'cat-accessory',
+      name: '配件',
+      code: 'accessory',
+      sortOrder: 4,
+      isActive: true,
+    },
+    {
+      id: 'cat-new-phone',
+      name: '新机',
+      code: 'new-phone',
+      parentId: 'cat-phone',
+      sortOrder: 1,
+      isActive: true,
+    },
+    {
+      id: 'cat-used-phone',
+      name: '二手机',
+      code: 'used-phone',
+      parentId: 'cat-phone',
+      sortOrder: 2,
+      isActive: true,
+    },
+  ];
+
+  for (const category of categories) {
+    await prisma.category.upsert({
+      where: { id: category.id },
+      update: {},
+      create: category,
+    });
+  }
+
+  console.log('✅ 创建示例分类');
+
+  // 创建示例品牌
+  const brands = [
+    {
+      id: 'brand-apple',
+      name: 'Apple',
+      code: 'apple',
+      sortOrder: 1,
+      isActive: true,
+    },
+    {
+      id: 'brand-huawei',
+      name: '华为',
+      code: 'huawei',
+      sortOrder: 2,
+      isActive: true,
+    },
+    {
+      id: 'brand-xiaomi',
+      name: '小米',
+      code: 'xiaomi',
+      sortOrder: 3,
+      isActive: true,
+    },
+    {
+      id: 'brand-samsung',
+      name: '三星',
+      code: 'samsung',
+      sortOrder: 4,
+      isActive: true,
+    },
+  ];
+
+  for (const brand of brands) {
+    await prisma.brand.upsert({
+      where: { id: brand.id },
+      update: {},
+      create: brand,
+    });
+  }
+
+  console.log('✅ 创建示例品牌');
+
   // 创建示例商品
   const products = [
     {
       id: 'prod-iphone15',
       name: 'iPhone 15',
-      category: '手机',
-      brand: 'Apple',
+      categoryLegacy: '手机',
+      brandLegacy: 'Apple',
+      categoryId: 'cat-new-phone',
+      brandId: 'brand-apple',
       model: 'A2650',
       price: 5999,
       costPrice: 5000,
@@ -76,8 +178,10 @@ async function main() {
     {
       id: 'prod-macbook',
       name: 'MacBook Pro',
-      category: '电脑',
-      brand: 'Apple',
+      categoryLegacy: '电脑',
+      brandLegacy: 'Apple',
+      categoryId: 'cat-computer',
+      brandId: 'brand-apple',
       model: 'M3',
       price: 12999,
       costPrice: 10000,
@@ -87,8 +191,10 @@ async function main() {
     {
       id: 'prod-ipad',
       name: 'iPad Pro',
-      category: '平板',
-      brand: 'Apple',
+      categoryLegacy: '平板',
+      brandLegacy: 'Apple',
+      categoryId: 'cat-tablet',
+      brandId: 'brand-apple',
       model: 'M2',
       price: 8999,
       costPrice: 7000,
@@ -98,8 +204,10 @@ async function main() {
     {
       id: 'prod-airpods',
       name: 'AirPods Pro',
-      category: '耳机',
-      brand: 'Apple',
+      categoryLegacy: '耳机',
+      brandLegacy: 'Apple',
+      categoryId: 'cat-accessory',
+      brandId: 'brand-apple',
       model: '2nd Gen',
       price: 1999,
       costPrice: 1500,
@@ -109,8 +217,10 @@ async function main() {
     {
       id: 'prod-huawei',
       name: '华为 Mate 60 Pro',
-      category: '手机',
-      brand: '华为',
+      categoryLegacy: '手机',
+      brandLegacy: '华为',
+      categoryId: 'cat-new-phone',
+      brandId: 'brand-huawei',
       model: 'Mate 60',
       price: 6999,
       costPrice: 5800,
@@ -120,8 +230,10 @@ async function main() {
     {
       id: 'prod-xiaomi',
       name: '小米 14 Pro',
-      category: '手机',
-      brand: '小米',
+      categoryLegacy: '手机',
+      brandLegacy: '小米',
+      categoryId: 'cat-new-phone',
+      brandId: 'brand-xiaomi',
       model: '14 Pro',
       price: 4999,
       costPrice: 4200,

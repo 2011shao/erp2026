@@ -765,6 +765,32 @@ export interface Permission {
   children?: Permission[];
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  code: string;
+  parentId: string | null;
+  parent?: Category;
+  children?: Category[];
+  products?: any[];
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Brand {
+  id: string;
+  name: string;
+  code: string;
+  logo?: string;
+  products?: any[];
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const roleApi = {
   getRoles: () => api.get<Role[]>('/roles'),
   getRole: (id: string) => api.get<Role>(`/roles/${id}`),
@@ -782,6 +808,38 @@ export const permissionApi = {
   createPermission: (data: { name: string; code: string; parentId?: string | null }) => api.post<Permission>('/permissions', data),
   updatePermission: (id: string, data: { name?: string; code?: string; parentId?: string | null }) => api.put<Permission>(`/permissions/${id}`, data),
   deletePermission: (id: string) => api.delete(`/permissions/${id}`),
+};
+
+export const categoryApi = {
+  getAll: (params?: { 
+    page?: number; 
+    limit?: number; 
+    search?: string; 
+    isActive?: boolean 
+  }) => api.get<Category[]>('/categories', { params }),
+  getTree: () => api.get<Category[]>('/categories/tree'),
+  getById: (id: string) => api.get<Category>(`/categories/${id}`),
+  getChildren: (parentId: string) => api.get<Category[]>(`/categories/${parentId}/children`),
+  create: (data: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'parent' | 'children' | 'products'>) => 
+    api.post<Category>('/categories', data),
+  update: (id: string, data: Partial<Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'parent' | 'children' | 'products'>>) => 
+    api.put<Category>(`/categories/${id}`, data),
+  delete: (id: string) => api.delete(`/categories/${id}`),
+};
+
+export const brandApi = {
+  getAll: (params?: { 
+    page?: number; 
+    limit?: number; 
+    search?: string; 
+    isActive?: boolean 
+  }) => api.get<Brand[]>('/brands', { params }),
+  getById: (id: string) => api.get<Brand>(`/brands/${id}`),
+  create: (data: Omit<Brand, 'id' | 'createdAt' | 'updatedAt' | 'products'>) => 
+    api.post<Brand>('/brands', data),
+  update: (id: string, data: Partial<Omit<Brand, 'id' | 'createdAt' | 'updatedAt' | 'products'>>) => 
+    api.put<Brand>(`/brands/${id}`, data),
+  delete: (id: string) => api.delete(`/brands/${id}`),
 };
 
 export default api;

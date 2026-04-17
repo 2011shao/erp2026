@@ -20,6 +20,8 @@ import TransferPage from './pages/TransferPage';
 import StocktakePage from './pages/StocktakePage';
 import CashierPage from './pages/CashierPage';
 import ReportPage from './pages/ReportPage';
+import CategoryPage from './pages/CategoryPage';
+import BrandPage from './pages/BrandPage';
 
 const { Header, Content, Sider } = Layout;
 
@@ -63,6 +65,10 @@ const App: React.FC = () => {
       items.push({ title: <span>店铺管理</span> });
     } else if (path === '/products') {
       items.push({ title: <span>商品管理</span> });
+    } else if (path === '/categories') {
+      items.push({ title: <span>商品管理</span> }, { title: <span>分类管理</span> });
+    } else if (path === '/brands') {
+      items.push({ title: <span>商品管理</span> }, { title: <span>品牌管理</span> });
     } else if (path === '/inventory') {
       items.push({ title: <span>库存管理</span> });
     } else if (path === '/sales') {
@@ -327,6 +333,8 @@ const App: React.FC = () => {
                 <Route path="/shops/add" element={<ShopPage />} />
                 <Route path="/products" element={<ProductPage />} />
                 <Route path="/products/add" element={<ProductPage />} />
+                <Route path="/categories" element={<CategoryPage />} />
+                <Route path="/brands" element={<BrandPage />} />
                 <Route path="/inventory" element={<InventoryPage />} />
                 <Route path="/serial-numbers" element={<SerialNumberPage />} />
                 <Route path="/sales" element={<SalesPage />} />

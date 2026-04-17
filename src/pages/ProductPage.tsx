@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Card, Table, Tag, Button, Space, Input, Select, Modal, Form, InputNumber, message } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
-import { productApi, shopApi } from '../api';
+import { productApi, shopApi, categoryApi, brandApi, Category, Brand } from '../api';
 import { useAuthStore } from '../store/authStore';
 
 const { Option } = Select;
@@ -12,6 +12,8 @@ const ProductPage: React.FC = () => {
   const location = useLocation();
   const [products, setProducts] = useState<any[]>([]);
   const [shops, setShops] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -35,12 +37,16 @@ const ProductPage: React.FC = () => {
     
     setLoading(true);
     try {
-      const [productsRes, shopsRes] = await Promise.all([
+      const [productsRes, shopsRes, categoriesRes, brandsRes] = await Promise.all([
         productApi.getAll(),
         shopApi.getAllSimple(),
+        categoryApi.getTree(),
+        brandApi.getAll(),
       ]);
       setProducts(productsRes.data || []);
       setShops(shopsRes.data || []);
+      setCategories(categoriesRes.data || []);
+      setBrands(brandsRes.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       message.error('获取数据失败');
@@ -229,11 +235,17 @@ const ProductPage: React.FC = () => {
             <Input placeholder="请输入商品名称" />
           </Form.Item>
           <Form.Item
-            name="brand"
+            name="brandId"
             label="品牌"
-            rules={[{ required: true, message: '请输入品牌' }]}
+            rules={[{ required: true, message: '请选择品牌' }]}
           >
-            <Input placeholder="请输入品牌" />
+            <Select placeholder="请选择品牌">
+              {brands.map(brand => (
+                <Option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </Option>
+              ))}
+            </Select>
           </Form.Item>
           <Form.Item
             name="model"
@@ -243,17 +255,21 @@ const ProductPage: React.FC = () => {
             <Input placeholder="请输入型号" />
           </Form.Item>
           <Form.Item
-            name="category"
+            name="categoryId"
             label="分类"
             rules={[{ required: true, message: '请选择分类' }]}
           >
             <Select placeholder="请选择分类">
-              <Option value="new">新机</Option>
-              <Option value="used">二手机</Option>
-              <Option value="accessory">配件</Option>
-              <Option value="coupon">卡券</Option>
-              <Option value="warranty">延保</Option>
-              <Option value="carrier_plan">运营商套餐</Option>
+              {categories.map(category => (
+                <React.Fragment key={category.id}>
+                  <Option value={category.id}>{category.name}</Option>
+                  {category.children?.map(child => (
+                    <Option key={child.id} value={child.id}>
+                      &nbsp;&nbsp;└ {child.name}
+                    </Option>
+                  ))}
+                </React.Fragment>
+              ))}
             </Select>
           </Form.Item>
           <Form.Item
