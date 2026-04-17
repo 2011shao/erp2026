@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, Table, Tag, Button, Space, Input, Select, Modal, Form, InputNumber, message } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { productApi, shopApi } from '../api';
@@ -8,6 +9,7 @@ const { Option } = Select;
 
 const ProductPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
+  const location = useLocation();
   const [products, setProducts] = useState<any[]>([]);
   const [shops, setShops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +17,15 @@ const ProductPage: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [searchText, setSearchText] = useState('');
   const [form] = Form.useForm();
+
+  // 检查路由是否为添加商品
+  useEffect(() => {
+    if (location.pathname === '/products/add') {
+      setEditingProduct(null);
+      form.resetFields();
+      setModalVisible(true);
+    }
+  }, [location.pathname, form]);
 
   const fetchData = async () => {
     if (!isAuthenticated) {

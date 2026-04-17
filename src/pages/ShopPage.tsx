@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, Table, Tag, Button, Space, Modal, Form, Input, message } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { shopApi } from '../api';
@@ -6,11 +7,21 @@ import { useAuthStore } from '../store/authStore';
 
 const ShopPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
+  const location = useLocation();
   const [shops, setShops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingShop, setEditingShop] = useState<any>(null);
   const [form] = Form.useForm();
+
+  // 检查路由是否为添加店铺
+  useEffect(() => {
+    if (location.pathname === '/shops/add') {
+      setEditingShop(null);
+      form.resetFields();
+      setModalVisible(true);
+    }
+  }, [location.pathname, form]);
 
   const fetchShops = async () => {
     if (!isAuthenticated) {
