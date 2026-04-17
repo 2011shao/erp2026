@@ -116,6 +116,7 @@ const ProductPage: React.FC = () => {
       title: '品牌',
       dataIndex: 'brand',
       key: 'brand',
+      render: (brand: any) => brand?.name || brand || '',
     },
     {
       title: '型号',
@@ -126,16 +127,8 @@ const ProductPage: React.FC = () => {
       title: '分类',
       dataIndex: 'category',
       key: 'category',
-      render: (category: string) => {
-        const categoryMap: { [key: string]: string } = {
-          new: '新机',
-          used: '二手机',
-          accessory: '配件',
-          coupon: '卡券',
-          warranty: '延保',
-          carrier_plan: '运营商套餐'
-        };
-        return <Tag color="blue">{categoryMap[category] || category}</Tag>;
+      render: (category: any) => {
+        return <Tag color="blue">{category?.name || category || ''}</Tag>;
       },
     },
     {

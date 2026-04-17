@@ -708,7 +708,7 @@ router.post('/:id/calculate-commission', authenticate, async (req, res, next) =>
       // 查找适用的提成规则
       const applicableRule = rules.find(rule => {
         // 检查商品类别
-        if (rule.productCategory && rule.productCategory !== item.product?.category) {
+        if (rule.productCategory && rule.productCategory !== item.product?.category?.name) {
           return false;
         }
         // 检查金额范围
@@ -804,7 +804,7 @@ router.get('/reports/gross-profit', authenticate, async (req, res, next) => {
         totalCost += cost;
 
         // 按类别统计
-        const category = item.product?.category || '其他';
+        const category = item.product?.category?.name || '其他';
         if (!categoryData[category]) {
           categoryData[category] = {
             revenue: 0,

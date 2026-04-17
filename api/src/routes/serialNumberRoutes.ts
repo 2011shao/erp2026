@@ -27,7 +27,12 @@ router.get('/serial-numbers', authenticate, async (req: AuthenticatedRequest, re
     const serialNumbers = await prisma.serialNumber.findMany({
       where,
       include: {
-        product: true,
+        product: {
+          include: {
+            brand: true,
+            category: true
+          }
+        },
         shop: true,
       },
       skip: (Number(page) - 1) * Number(limit),
@@ -60,7 +65,12 @@ router.get('/serial-numbers/:id', authenticate, async (req: AuthenticatedRequest
     const serialNumber = await prisma.serialNumber.findUnique({
       where: { id },
       include: {
-        product: true,
+        product: {
+          include: {
+            brand: true,
+            category: true
+          }
+        },
         shop: true,
         logs: {
           include: { operator: true },
@@ -108,7 +118,12 @@ router.post('/serial-numbers', authenticate, async (req: AuthenticatedRequest, r
         status: 'in_stock',
       },
       include: {
-        product: true,
+        product: {
+          include: {
+            brand: true,
+            category: true
+          }
+        },
         shop: true,
       },
     });
@@ -219,7 +234,12 @@ router.patch('/serial-numbers/:id/status', authenticate, async (req: Authenticat
       where: { id },
       data: { status },
       include: {
-        product: true,
+        product: {
+          include: {
+            brand: true,
+            category: true
+          }
+        },
         shop: true,
       },
     });
@@ -289,7 +309,12 @@ router.get('/serial-numbers/export', authenticate, async (req: AuthenticatedRequ
     const serialNumbers = await prisma.serialNumber.findMany({
       where,
       include: {
-        product: true,
+        product: {
+          include: {
+            brand: true,
+            category: true
+          }
+        },
         shop: true,
       },
       orderBy: { createdAt: 'desc' },
@@ -300,7 +325,7 @@ router.get('/serial-numbers/export', authenticate, async (req: AuthenticatedRequ
     const rows = serialNumbers.map(sn => [
       sn.serialNumber,
       sn.product.name,
-      sn.product.brand,
+      sn.product.brand?.name || '',
       sn.product.model,
       sn.status,
       sn.shop.name,
@@ -336,7 +361,12 @@ router.get('/serial-numbers/alerts', authenticate, async (req: AuthenticatedRequ
     const serialNumbers = await prisma.serialNumber.findMany({
       where,
       include: {
-        product: true,
+        product: {
+          include: {
+            brand: true,
+            category: true
+          }
+        },
         shop: true,
       },
     });
@@ -372,7 +402,7 @@ router.get('/serial-numbers/alerts', authenticate, async (req: AuthenticatedRequ
           alerts.push({
             productId,
             productName: product.name,
-            brand: product.brand,
+            brand: product.brand?.name || '',
             model: product.model,
             stock,
             alertLevel,
@@ -422,7 +452,12 @@ router.patch('/serial-numbers/:id/clear-alert', authenticate, async (req: Authen
         alertMessage: null,
       },
       include: {
-        product: true,
+        product: {
+          include: {
+            brand: true,
+            category: true
+          }
+        },
         shop: true,
       },
     });

@@ -45,12 +45,13 @@ const InventoryPage: React.FC = () => {
       title: '品牌',
       dataIndex: 'brand',
       key: 'brand',
+      render: (brand: any) => brand?.name || brand || '',
     },
     {
       title: '分类',
       dataIndex: 'category',
       key: 'category',
-      render: (category: string) => <Tag color="blue">{category}</Tag>,
+      render: (category: any) => <Tag color="blue">{category?.name || category || ''}</Tag>,
     },
     {
       title: '当前库存',
