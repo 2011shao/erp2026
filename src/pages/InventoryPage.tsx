@@ -3,10 +3,12 @@ import { Card, Table, Tag, Button, Space, Statistic, Row, Col, Modal, Form, Inpu
 import { StockOutlined, WarningOutlined, CheckCircleOutlined, InboxOutlined, ExportOutlined, HistoryOutlined } from '@ant-design/icons';
 import { inventoryApi, productApi, shopApi } from '../api';
 import { useAuthStore } from '../store/authStore';
+import { useNavigate } from 'react-router-dom';
 import type { InventoryLog } from '../api';
 
 const InventoryPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [shops, setShops] = useState<any[]>([]);
@@ -239,7 +241,7 @@ const InventoryPage: React.FC = () => {
       </Row>
 
       <Card title="库存管理" extra={
-        <Button type="primary" icon={<InboxOutlined />} onClick={() => window.location.href = '/stock-in'}>
+        <Button type="primary" icon={<InboxOutlined />} onClick={() => navigate('/stock-in')}>
           新增入库单
         </Button>
       }>
