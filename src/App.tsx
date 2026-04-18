@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Menu, Button, Form, Input, Avatar, Dropdown, Breadcrumb, ConfigProvider, theme, Modal } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
-import { Link, Routes, Route, useLocation } from 'react-router-dom';
+import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, LockOutlined, InboxOutlined } from '@ant-design/icons';
+import { Link, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore, filterMenuByPermission } from './store/authStore';
 import { menuConfig } from './config/menu';
 import HomePage from './pages/HomePage';
@@ -33,6 +33,7 @@ const App: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [form] = Form.useForm();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // 监听token失效事件
   useEffect(() => {
@@ -180,6 +181,14 @@ const App: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {isAuthenticated ? (
               <>
+                <Button 
+                  type="primary" 
+                  icon={<InboxOutlined />}
+                  onClick={() => navigate('/stock-in')}
+                  style={{ marginRight: 16 }}
+                >
+                  新增入库
+                </Button>
                 <div style={{ 
                   display: 'flex', 
                   alignItems: 'center', 

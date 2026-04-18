@@ -30,7 +30,6 @@ import { stockInApi, supplierApi, productApi, categoryApi, brandApi, StockInOrde
 
 const { Option } = Select;
 const { TextArea } = Input;
-const { TabPane } = Tabs;
 
 const StockInPage: React.FC = () => {
   const [orders, setOrders] = useState<StockInOrder[]>([]);
