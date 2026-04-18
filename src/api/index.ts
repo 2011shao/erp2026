@@ -210,14 +210,8 @@ export interface Product {
   model: string;
   price: number;
   costPrice: number;
-  stock: number;
-  shopId: string;
   createdAt: string;
   updatedAt: string;
-  shop?: {
-    id: string;
-    name: string;
-  };
 }
 
 export interface InventoryLog {
@@ -332,15 +326,16 @@ export const productApi = {
     limit?: number; 
     search?: string; 
     category?: string; 
-    shopId?: string 
+    brand?: string; 
+    model?: string 
   }) => api.get<Product[]>('/products', { params }),
   getCategories: () => api.get<string[]>('/products/categories'),
   getById: (id: string) => api.get<Product>(`/products/${id}`),
-  create: (data: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'shop'>) => 
+  create: (data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => 
     api.post<Product>('/products', data),
-  createBatch: (products: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'shop'>[]) => 
+  createBatch: (products: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>[]) => 
     api.post<Product[]>('/products/batch', { products }),
-  update: (id: string, data: Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'shop'>>) => 
+  update: (id: string, data: Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>) => 
     api.put<Product>(`/products/${id}`, data),
   updateBatch: (updates: { id: string; data: Partial<Product> }[]) => 
     api.put<Product[]>('/products/batch', { updates }),
@@ -353,28 +348,19 @@ export const inventoryApi = {
   getAll: (params?: { 
     page?: number; 
     limit?: number; 
-    shopId?: string; 
-    lowStock?: boolean 
-  }) => api.get<Product[]>('/inventory', { params }),
-  getAlerts: (params?: { shopId?: string }) => 
-    api.get<Product[]>('/inventory/alerts', { params }),
+    search?: string; 
+    category?: string; 
+    brand?: string; 
+    model?: string 
+  }) => api.get<any[]>('/inventory', { params }),
+  getAlerts: () => 
+    api.get<any[]>('/inventory/alerts'),
   getLogs: (params?: { 
     page?: number; 
     limit?: number; 
     productId?: string; 
-    shopId?: string 
-  }) => api.get<InventoryLog[]>('/inventory/logs', { params }),
-  adjust: (data: { 
-    productId: string; 
-    quantity: number; 
-    type: 'in' | 'out'; 
-    reason: string; 
-    shopId: string 
-  }) => api.post('/inventory/adjust', data),
-  stocktake: (data: { 
-    items: { productId: string; actualStock: number }[]; 
-    shopId: string 
-  }) => api.post('/inventory/stocktake', data),
+    serialNumberId?: string 
+  }) => api.get<any[]>('/inventory/logs', { params }),
 };
 
 export interface CommissionRule {
@@ -528,15 +514,7 @@ export const serialNumberApi = {
   clearAlert: (id: string) => api.patch(`/serial-numbers/${id}/clear-alert`),
 };
 
-export interface Supplier {
-  id: string;
-  name: string;
-  contactName: string;
-  contactPhone: string;
-  address: string;
-  createdAt: string;
-  updatedAt: string;
-}
+
 
 export const purchaseApi = {
   getAll: (params?: { 
@@ -861,6 +839,96 @@ export const brandApi = {
   delete: (id: string) => api.delete(`/brands/${id}`),
   export: () => api.get('/brands/export'),
   import: (data: { brands: any[] }) => api.post('/brands/import', data),
+};
+
+export interface Supplier {
+  id: string;
+  code: string;
+  name: string;
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  companyName: string;
+  taxNumber: string;
+  bankName: string;
+  bankAccount: string;
+  address: string;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StockInOrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  quantity: number;
+  price: number;
+  serialNumbers: string[];
+  createdAt: string;
+  updatedAt: string;
+  product?: Product;
+}
+
+export interface StockInOrder {
+  id: string;
+  supplierId: string;
+  totalAmount: number;
+  status: 'pending' | 'completed' | 'cancelled';
+  notes: string;
+  items: StockInOrderItem[];
+  supplier?: Supplier;
+  createdAt: string;
+  updatedAt: string;
+  logs?: any[];
+}
+
+export const supplierApi = {
+  getAll: (params?: { 
+    page?: number; 
+    limit?: number; 
+    search?: string; 
+    status?: 'active' | 'inactive' 
+  }) => api.get<Supplier[]>('/suppliers', { params }),
+  getById: (id: string) => api.get<Supplier>(`/suppliers/${id}`),
+  create: (data: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) => 
+    api.post<Supplier>('/suppliers', data),
+  update: (id: string, data: Partial<Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>>) => 
+    api.put<Supplier>(`/suppliers/${id}`, data),
+  delete: (id: string) => api.delete(`/suppliers/${id}`),
+  search: (query: string) => api.get<Supplier[]>('/suppliers/search', { params: { query } }),
+};
+
+export const stockInApi = {
+  getAll: (params?: { 
+    page?: number; 
+    limit?: number; 
+    supplierId?: string; 
+    status?: 'pending' | 'completed' | 'cancelled';
+    startDate?: string;
+    endDate?: string;
+  }) => api.get<StockInOrder[]>('/stock-in', { params }),
+  getById: (id: string) => api.get<StockInOrder>(`/stock-in/${id}`),
+  create: (data: { 
+    supplierId: string;
+    notes?: string;
+    items: { 
+      productId: string;
+      quantity: number;
+      price: number;
+      serialNumbers?: string[];
+      generateSerialNumbers?: boolean;
+    }[];
+  }) => api.post<StockInOrder>('/stock-in', data),
+  update: (id: string, data: { 
+    supplierId?: string;
+    notes?: string;
+    status?: 'pending' | 'completed' | 'cancelled';
+  }) => api.put<StockInOrder>(`/stock-in/${id}`, data),
+  delete: (id: string) => api.delete(`/stock-in/${id}`),
+  complete: (id: string) => api.post(`/stock-in/${id}/complete`),
+  cancel: (id: string) => api.post(`/stock-in/${id}/cancel`),
+  getSerialNumberLogs: (serialNumber: string) => api.get<any[]>(`/stock-in/serial-number/${serialNumber}/logs`),
 };
 
 export default api;

@@ -22,6 +22,8 @@ import CashierPage from './pages/CashierPage';
 import ReportPage from './pages/ReportPage';
 import CategoryPage from './pages/CategoryPage';
 import BrandPage from './pages/BrandPage';
+import SupplierPage from './pages/SupplierPage';
+import StockInPage from './pages/StockInPage';
 
 const { Header, Content, Sider } = Layout;
 
@@ -351,6 +353,8 @@ const App: React.FC = () => {
                 <Route path="/inventory" element={<InventoryPage />} />
                 <Route path="/serial-numbers" element={<SerialNumberPage />} />
                 <Route path="/sales" element={<SalesPage />} />
+                <Route path="/suppliers" element={<SupplierPage />} />
+                <Route path="/stock-in" element={<StockInPage />} />
                 <Route path="/purchases" element={<PurchasePage />} />
                 <Route path="/warehouses" element={<WarehousePage />} />
                 <Route path="/transfers" element={<TransferPage />} />

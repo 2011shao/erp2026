@@ -72,12 +72,12 @@ export const useAuthStore = create<AuthState>()(
             } else {
               console.error('Failed to get permissions:', permissionsResponse.status);
               // 即使权限获取失败，也允许登录，使用默认权限
-              set({ permissions: ['dashboard.view', 'shop.manage', 'product.manage', 'inventory.manage', 'sales.manage', 'financial.manage', 'report.manage', 'user.manage', 'system.manage', 'role.manage', 'permission.manage'] });
+              set({ permissions: ['dashboard.view', 'shop.manage', 'product.manage', 'inventory.manage', 'sales.manage', 'financial.manage', 'report.manage', 'user.manage', 'system.manage', 'role.manage', 'permission.manage', 'supplier.manage', 'stockIn.manage'] });
             }
           } catch (error) {
             console.error('Error fetching permissions:', error);
             // 即使权限获取失败，也允许登录，使用默认权限
-            set({ permissions: ['dashboard.view', 'shop.manage', 'product.manage', 'inventory.manage', 'sales.manage', 'financial.manage', 'report.manage', 'user.manage', 'system.manage', 'role.manage', 'permission.manage'] });
+            set({ permissions: ['dashboard.view', 'shop.manage', 'product.manage', 'inventory.manage', 'sales.manage', 'financial.manage', 'report.manage', 'user.manage', 'system.manage', 'role.manage', 'permission.manage', 'supplier.manage', 'stockIn.manage'] });
           }
 
           set({ user, isAuthenticated: true, isLoading: false });

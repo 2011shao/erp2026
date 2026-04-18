@@ -1,4 +1,4 @@
-import { HomeOutlined, ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarOutlined, BarChartOutlined, UserOutlined, SettingOutlined, TagsOutlined, DollarCircleOutlined, ShoppingCartOutlined, SwapOutlined } from '@ant-design/icons';
+import { HomeOutlined, ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarOutlined, BarChartOutlined, UserOutlined, SettingOutlined, TagsOutlined, DollarCircleOutlined, ShoppingCartOutlined, SwapOutlined, TeamOutlined, InboxOutlined } from '@ant-design/icons';
 
 export interface MenuItem {
   key: string;
@@ -125,55 +125,69 @@ export const menuConfig: MenuItem[] = [
   },
   {
     key: '6',
+    icon: <TeamOutlined />,
+    label: '供货商管理',
+    path: '/suppliers',
+    permission: 'supplier.manage'
+  },
+  {
+    key: '7',
+    icon: <InboxOutlined />,
+    label: '入库管理',
+    path: '/stock-in',
+    permission: 'stockIn.manage'
+  },
+  {
+    key: '8',
     icon: <ShoppingCartOutlined />,
     label: '采购管理',
     path: '/purchases',
     permission: 'purchase.manage'
   },
   {
-    key: '7',
+    key: '9',
     icon: <StockOutlined />,
     label: '仓库管理',
     path: '/warehouses',
     permission: 'warehouse.manage'
   },
   {
-    key: '8',
+    key: '10',
     icon: <SwapOutlined />,
     label: '调拨管理',
     path: '/transfers',
     permission: 'transfer.manage'
   },
   {
-    key: '9',
+    key: '11',
     icon: <StockOutlined />,
     label: '库存盘点',
     path: '/stocktakes',
     permission: 'stocktake.manage'
   },
   {
-    key: '10',
+    key: '12',
     icon: <DollarOutlined />,
     label: '财务管理',
     path: '/financial',
     permission: 'financial.manage'
   },
   {
-    key: '11',
+    key: '13',
     icon: <BarChartOutlined />,
     label: '报表分析',
     path: '/reports',
     permission: 'report.manage'
   },
   {
-    key: '12',
+    key: '14',
     icon: <UserOutlined />,
     label: '用户管理',
     path: '/users',
     permission: 'user.manage'
   },
   {
-    key: '13',
+    key: '15',
     icon: <SettingOutlined />,
     label: '系统设置',
     path: '/settings',

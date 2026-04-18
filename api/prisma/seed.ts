@@ -167,78 +167,108 @@ async function main() {
       name: 'iPhone 15',
       categoryLegacy: '手机',
       brandLegacy: 'Apple',
-      categoryId: 'cat-new-phone',
-      brandId: 'brand-apple',
       model: 'A2650',
       price: 5999,
       costPrice: 5000,
-      stock: 50,
-      shopId: shop1.id,
+      category: {
+        connect: { id: 'cat-new-phone' }
+      },
+      brand: {
+        connect: { id: 'brand-apple' }
+      },
+      shop: {
+        connect: { id: shop1.id }
+      }
     },
     {
       id: 'prod-macbook',
       name: 'MacBook Pro',
       categoryLegacy: '电脑',
       brandLegacy: 'Apple',
-      categoryId: 'cat-computer',
-      brandId: 'brand-apple',
       model: 'M3',
       price: 12999,
       costPrice: 10000,
-      stock: 20,
-      shopId: shop1.id,
+      category: {
+        connect: { id: 'cat-computer' }
+      },
+      brand: {
+        connect: { id: 'brand-apple' }
+      },
+      shop: {
+        connect: { id: shop1.id }
+      }
     },
     {
       id: 'prod-ipad',
       name: 'iPad Pro',
       categoryLegacy: '平板',
       brandLegacy: 'Apple',
-      categoryId: 'cat-tablet',
-      brandId: 'brand-apple',
       model: 'M2',
       price: 8999,
       costPrice: 7000,
-      stock: 30,
-      shopId: shop2.id,
+      category: {
+        connect: { id: 'cat-tablet' }
+      },
+      brand: {
+        connect: { id: 'brand-apple' }
+      },
+      shop: {
+        connect: { id: shop2.id }
+      }
     },
     {
       id: 'prod-airpods',
       name: 'AirPods Pro',
       categoryLegacy: '耳机',
       brandLegacy: 'Apple',
-      categoryId: 'cat-accessory',
-      brandId: 'brand-apple',
       model: '2nd Gen',
       price: 1999,
       costPrice: 1500,
-      stock: 100,
-      shopId: shop3.id,
+      category: {
+        connect: { id: 'cat-accessory' }
+      },
+      brand: {
+        connect: { id: 'brand-apple' }
+      },
+      shop: {
+        connect: { id: shop3.id }
+      }
     },
     {
       id: 'prod-huawei',
       name: '华为 Mate 60 Pro',
       categoryLegacy: '手机',
       brandLegacy: '华为',
-      categoryId: 'cat-new-phone',
-      brandId: 'brand-huawei',
       model: 'Mate 60',
       price: 6999,
       costPrice: 5800,
-      stock: 40,
-      shopId: shop1.id,
+      category: {
+        connect: { id: 'cat-new-phone' }
+      },
+      brand: {
+        connect: { id: 'brand-huawei' }
+      },
+      shop: {
+        connect: { id: shop1.id }
+      }
     },
     {
       id: 'prod-xiaomi',
       name: '小米 14 Pro',
       categoryLegacy: '手机',
       brandLegacy: '小米',
-      categoryId: 'cat-new-phone',
-      brandId: 'brand-xiaomi',
       model: '14 Pro',
       price: 4999,
       costPrice: 4200,
-      stock: 60,
-      shopId: shop2.id,
+      category: {
+        connect: { id: 'cat-new-phone' }
+      },
+      brand: {
+        connect: { id: 'brand-xiaomi' }
+      },
+      shop: {
+        connect: { id: shop2.id }
+      }
     },
   ];
 

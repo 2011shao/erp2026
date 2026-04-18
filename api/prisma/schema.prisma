@@ -26,6 +26,8 @@ model User {
   TransferLog      TransferLog[]
   Stocktake        Stocktake[]
   StocktakeLog     StocktakeLog[]
+  stockInOrders    StockInOrder[]
+  stockInOrderLogs StockInOrderLog[]
 }
 
 // 店铺模型
@@ -39,6 +41,8 @@ model Shop {
   salesOrders      SalesOrder[]
   financialRecords FinancialRecord[]
   serialNumbers    SerialNumber[]
+  suppliers        Supplier[]
+  stockInOrders    StockInOrder[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   PurchaseOrder    PurchaseOrder[]
@@ -113,9 +117,8 @@ model Product {
   model              String
   price              Decimal
   costPrice          Decimal
-  stock              Int
-  shopId             String
-  shop               Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId             String?
+  shop               Shop?                @relation(fields: [shopId], references: [id], onDelete: SetNull)
   warehouseId        String?
   warehouse          Warehouse?           @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   inventoryLogs      InventoryLog[]
@@ -132,12 +135,13 @@ model Product {
   PurchaseReturnItem PurchaseReturnItem[]
   TransferOrderItem  TransferOrderItem[]
   StocktakeItem      StocktakeItem[]
+  stockInOrderItems  StockInOrderItem[]
 
-  @@index([categoryId, shopId])
-  @@index([brandId, shopId])
-  @@index([shopId, stock])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([shopId])
   @@index([name, model])
-  @@index([createdAt, shopId])
+  @@index([createdAt])
 }
 
 // 库存变动记录
@@ -264,6 +268,9 @@ model SerialNumber {
   stocktakeId          String?
   stocktakeItemId      String?
   stocktakeItem        StocktakeItem?      @relation(fields: [stocktakeItemId], references: [id], onDelete: SetNull)
+  stockInOrderId       String?
+  stockInOrderItemId   String?
+  stockInOrderItem     StockInOrderItem?   @relation(fields: [stockInOrderItemId], references: [id], onDelete: SetNull)
   serviceTicketId      String?
   alertLevel           String? // low, medium, high
   alertMessage         String?
@@ -312,12 +319,46 @@ model CommissionRecord {
   updatedAt DateTime   @updatedAt
 }
 
+// 供货商模型
+model Supplier {
+  id          String   @id @default(cuid())
+  name        String   // 供货商名称
+  code        String   @unique // 供货商编码
+  address     String?  // 地址
+  phone       String?  // 联系电话
+  email       String?  // 邮箱
+  // 对公信息
+  companyName String?  // 公司名称
+  taxNumber   String?  // 税号
+  bankName    String?  // 开户银行
+  bankAccount String?  // 银行账号
+  // 联系人信息
+  contactName    String?  // 联系人姓名
+  contactPhone   String?  // 联系人电话
+  contactEmail   String?  // 联系人邮箱
+  contactPosition String? // 联系人职位
+  // 状态
+  status       String   @default("active") // active, inactive
+  notes        String?  // 备注
+  shopId       String
+  shop         Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  purchaseOrders PurchaseOrder[]
+  stockInOrders StockInOrder[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([shopId, status])
+  @@index([name])
+  @@index([code])
+}
+
 // 采购订单表
 model PurchaseOrder {
   id             String              @id @default(cuid())
   shopId         String
   shop           Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
   supplierId     String
+  supplier       Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   totalAmount    Decimal
   status         String              @default("pending") // pending, completed, cancelled
   items          PurchaseOrderItem[]
@@ -382,6 +423,7 @@ model Warehouse {
   serialNumbers      SerialNumber[]
   transferOrdersFrom TransferOrder[] @relation("FromWarehouse")
   transferOrdersTo   TransferOrder[] @relation("ToWarehouse")
+  stockInOrders      StockInOrder[]
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   Stocktake          Stocktake[]
@@ -481,4 +523,51 @@ model StocktakeLog {
   operatorId  String
   operator    User      @relation(fields: [operatorId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
+}
+
+// 入库单模型
+model StockInOrder {
+  id          String          @id @default(cuid())
+  shopId      String
+  shop        Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  supplierId  String?
+  supplier    Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  warehouseId String?
+  warehouse   Warehouse?      @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  operatorId  String
+  operator    User            @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  status      String          @default("pending") // pending, confirmed, completed, cancelled
+  totalItems  Int             @default(0)
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  items       StockInOrderItem[]
+  logs        StockInOrderLog[]
+}
+
+// 入库单详情模型
+model StockInOrderItem {
+  id               String         @id @default(cuid())
+  orderId          String
+  order            StockInOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId        String
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity         Int
+  price            Decimal
+  serialNumberType String         // manual, auto // 串号生成方式
+  serialNumbers    SerialNumber[]
+  createdAt        DateTime       @default(now())
+}
+
+// 入库单日志模型
+model StockInOrderLog {
+  id          String       @id @default(cuid())
+  orderId     String
+  order       StockInOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  oldStatus   String
+  newStatus   String
+  reason      String
+  operatorId  String
+  operator    User         @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
 }
