@@ -370,6 +370,8 @@ async function main() {
     { code: 'product.manage', name: '商品管理', type: 'menu', description: '允许访问商品管理菜单' },
     { code: 'inventory.manage', name: '库存管理', type: 'menu', description: '允许访问库存管理菜单' },
     { code: 'sales.manage', name: '销售管理', type: 'menu', description: '允许访问销售管理菜单' },
+    { code: 'supplier.manage', name: '供应商管理', type: 'menu', description: '允许访问供应商管理菜单' },
+    { code: 'stockIn.manage', name: '入库管理', type: 'menu', description: '允许访问入库管理菜单' },
     { code: 'financial.manage', name: '财务管理', type: 'menu', description: '允许访问财务管理菜单' },
     { code: 'report.manage', name: '报表管理', type: 'menu', description: '允许访问报表管理菜单' },
     { code: 'user.manage', name: '用户管理', type: 'menu', description: '允许访问用户管理菜单' },
@@ -403,6 +405,12 @@ async function main() {
     { code: 'role.create', name: '创建角色', type: 'action', description: '允许创建角色' },
     { code: 'role.edit', name: '编辑角色', type: 'action', description: '允许编辑角色' },
     { code: 'role.delete', name: '删除角色', type: 'action', description: '允许删除角色' },
+    
+    // 供应商管理权限
+    { code: 'supplier.view', name: '查看供应商', type: 'action', description: '允许查看供应商列表' },
+    { code: 'supplier.create', name: '创建供应商', type: 'action', description: '允许创建供应商' },
+    { code: 'supplier.edit', name: '编辑供应商', type: 'action', description: '允许编辑供应商' },
+    { code: 'supplier.delete', name: '删除供应商', type: 'action', description: '允许删除供应商' },
   ];
 
   for (const permission of permissions) {

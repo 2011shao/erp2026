@@ -26,7 +26,7 @@ import {
   CloseOutlined, 
   EyeOutlined 
 } from '@ant-design/icons';
-import { stockInApi, supplierApi, productApi, StockInOrder, Supplier, Product } from '../api';
+import { stockInApi, supplierApi, productApi, categoryApi, brandApi, StockInOrder, Supplier, Product } from '../api';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -45,8 +45,11 @@ const StockInPage: React.FC = () => {
   const [selectedSupplier, setSelectedSupplier] = useState<string>('');
   const [searchParams, setSearchParams] = useState({
     brand: '',
+    category: '',
     model: '',
   });
+  const [categories, setCategories] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
   const [serialNumberMethod, setSerialNumberMethod] = useState<'manual' | 'auto'>('manual');
   const [serialNumbers, setSerialNumbers] = useState<string>('');
@@ -79,10 +82,33 @@ const StockInPage: React.FC = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const response = await categoryApi.getTree();
+      if (response.success) {
+        setCategories(response.data || []);
+      }
+    } catch (error) {
+      console.error('获取分类列表失败', error);
+    }
+  };
+
+  const fetchBrands = async () => {
+    try {
+      const response = await brandApi.getAll();
+      if (response.success) {
+        setBrands(response.data || []);
+      }
+    } catch (error) {
+      console.error('获取品牌列表失败', error);
+    }
+  };
+
   const searchProducts = async () => {
     try {
       const response = await productApi.getAll({
         brand: searchParams.brand,
+        categoryId: searchParams.category,
         model: searchParams.model,
       });
       if (response.success) {
@@ -96,13 +122,15 @@ const StockInPage: React.FC = () => {
   useEffect(() => {
     fetchOrders();
     fetchSuppliers();
+    fetchCategories();
+    fetchBrands();
   }, []);
 
   const handleAdd = () => {
     form.resetFields();
     setCurrentStep(1);
     setSelectedSupplier('');
-    setSearchParams({ brand: '', model: '' });
+    setSearchParams({ brand: '', category: '', model: '' });
     setSelectedProducts([]);
     setSerialNumberMethod('manual');
     setSerialNumbers('');
@@ -158,13 +186,15 @@ const StockInPage: React.FC = () => {
   };
 
   const handleProductSelect = (product: Product) => {
+    const brand = brands.find(b => b.id === product.brandId);
     setSelectedProducts([...selectedProducts, {
       productId: product.id,
       productName: product.name,
-      brand: product.brand?.name || '',
+      brand: brand?.name || '',
       model: product.model,
       quantity: 1,
       price: product.price,
+      costPrice: product.costPrice || product.price,
       serialNumbers: [],
     }]);
   };
@@ -203,6 +233,7 @@ const StockInPage: React.FC = () => {
         productId: product.productId,
         quantity: product.quantity,
         price: product.price,
+        costPrice: product.costPrice,
         serialNumbers: product.serialNumbers,
         generateSerialNumbers: serialNumberMethod === 'auto',
       }));
@@ -396,12 +427,35 @@ const StockInPage: React.FC = () => {
             <div className="mb-4">
               <h3 className="mb-2">搜索商品</h3>
               <Space>
-                <Input
-                  placeholder="品牌"
-                  value={searchParams.brand}
-                  onChange={(e) => setSearchParams({ ...searchParams, brand: e.target.value })}
+                <Select
+                  placeholder="选择分类"
+                  value={searchParams.category}
+                  onChange={(value) => setSearchParams({ ...searchParams, category: value })}
                   style={{ width: 150 }}
-                />
+                  allowClear
+                >
+                  {categories.map(category => (
+                    <React.Fragment key={category.id}>
+                      <Option value={category.id}>{category.name}</Option>
+                      {category.children?.map(child => (
+                        <Option key={child.id} value={child.id}>
+                          &nbsp;&nbsp;└ {child.name}
+                        </Option>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </Select>
+                <Select
+                  placeholder="选择品牌"
+                  value={searchParams.brand}
+                  onChange={(value) => setSearchParams({ ...searchParams, brand: value })}
+                  style={{ width: 150 }}
+                  allowClear
+                >
+                  {brands.map(brand => (
+                    <Option key={brand.id} value={brand.id}>{brand.name}</Option>
+                  ))}
+                </Select>
                 <Input
                   placeholder="型号"
                   value={searchParams.model}
@@ -419,7 +473,15 @@ const StockInPage: React.FC = () => {
               <Table
                 columns={[
                   { title: '商品名称', dataIndex: 'name', key: 'name' },
-                  { title: '品牌', dataIndex: 'brand', key: 'brand', render: (brand: any) => brand?.name || '-' },
+                  { 
+                    title: '品牌', 
+                    dataIndex: 'brandId', 
+                    key: 'brand', 
+                    render: (brandId: string) => {
+                      const brand = brands.find(b => b.id === brandId);
+                      return brand?.name || '-';
+                    }
+                  },
                   { title: '型号', dataIndex: 'model', key: 'model' },
                   { title: '价格', dataIndex: 'price', key: 'price', render: (price: number) => `¥${price.toFixed(2)}` },
                   { 
@@ -457,7 +519,22 @@ const StockInPage: React.FC = () => {
                     ) 
                   },
                   { 
-                    title: '单价', 
+                    title: '成本价', 
+                    key: 'costPrice', 
+                    render: (_: any, record: any, index: number) => (
+                      <InputNumber 
+                        min={0} 
+                        value={record.costPrice} 
+                        onChange={(value) => {
+                          const newProducts = [...selectedProducts];
+                          newProducts[index].costPrice = value || 0;
+                          setSelectedProducts(newProducts);
+                        }} 
+                      />
+                    ) 
+                  },
+                  { 
+                    title: '售价', 
                     key: 'price', 
                     render: (_: any, record: any, index: number) => (
                       <InputNumber 

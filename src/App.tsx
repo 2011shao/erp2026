@@ -274,7 +274,7 @@ const App: React.FC = () => {
               items={menuItems}
               selectedKeys={[location.pathname]}
               theme="dark"
-              defaultOpenKeys={['shops', 'products', 'inventory', 'sales', 'financial', 'reports', 'users', 'settings']}
+              defaultOpenKeys={['shops', 'products', 'inventory', 'sales', '6', 'financial', 'reports', 'users', 'settings']}
             />
           </Sider>
           
