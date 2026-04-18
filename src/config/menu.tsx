@@ -93,6 +93,13 @@ export const menuConfig: MenuItem[] = [
       },
       {
         key: '4-2',
+        icon: <InboxOutlined />,
+        label: '入库管理',
+        path: '/stock-in',
+        permission: 'stockIn.manage'
+      },
+      {
+        key: '4-3',
         icon: <TagsOutlined />,
         label: '串号管理',
         path: '/serial-numbers',
@@ -146,78 +153,72 @@ export const menuConfig: MenuItem[] = [
       }
     ]
   },
+
   {
     key: '7',
-    icon: <InboxOutlined />,
-    label: '入库管理',
-    path: '/stock-in',
-    permission: 'stockIn.manage'
-  },
-  {
-    key: '8',
     icon: <ShoppingCartOutlined />,
     label: '采购管理',
     path: '/purchases',
     permission: 'purchase.manage'
   },
   {
-    key: '9',
+    key: '8',
     icon: <StockOutlined />,
     label: '仓库管理',
     path: '/warehouses',
     permission: 'warehouse.manage'
   },
   {
-    key: '10',
+    key: '9',
     icon: <SwapOutlined />,
     label: '调拨管理',
     path: '/transfers',
     permission: 'transfer.manage'
   },
   {
-    key: '11',
+    key: '10',
     icon: <StockOutlined />,
     label: '库存盘点',
     path: '/stocktakes',
     permission: 'stocktake.manage'
   },
   {
-    key: '12',
+    key: '11',
     icon: <DollarOutlined />,
     label: '财务管理',
     path: '/financial',
     permission: 'financial.manage'
   },
   {
-    key: '13',
+    key: '12',
     icon: <BarChartOutlined />,
     label: '报表分析',
     path: '/reports',
     permission: 'report.manage'
   },
   {
-    key: '14',
+    key: '13',
     icon: <UserOutlined />,
     label: '用户管理',
     path: '/users',
     permission: 'user.manage'
   },
   {
-    key: '15',
+    key: '14',
     icon: <SettingOutlined />,
     label: '系统设置',
     path: '/settings',
     permission: 'system.manage',
     children: [
       {
-        key: '13-1',
+        key: '14-1',
         icon: <SettingOutlined />,
         label: '角色管理',
         path: '/settings/roles',
         permission: 'role.manage'
       },
       {
-        key: '13-2',
+        key: '14-2',
         icon: <SettingOutlined />,
         label: '权限管理',
         path: '/settings/permissions',
