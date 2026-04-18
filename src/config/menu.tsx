@@ -128,7 +128,23 @@ export const menuConfig: MenuItem[] = [
     icon: <TeamOutlined />,
     label: '供货商管理',
     path: '/suppliers',
-    permission: 'supplier.manage'
+    permission: 'supplier.manage',
+    children: [
+      {
+        key: '6-1',
+        icon: <TeamOutlined />,
+        label: '供应商列表',
+        path: '/suppliers',
+        permission: 'supplier.view'
+      },
+      {
+        key: '6-2',
+        icon: <PlusOutlined />,
+        label: '新增供应商',
+        path: '/suppliers/add',
+        permission: 'supplier.create'
+      }
+    ]
   },
   {
     key: '7',

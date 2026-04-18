@@ -238,7 +238,11 @@ const InventoryPage: React.FC = () => {
         </Col>
       </Row>
 
-      <Card title="库存管理" extra={<div>共 {products.length} 个商品</div>}>
+      <Card title="库存管理" extra={
+        <Button type="primary" icon={<InboxOutlined />} onClick={() => window.location.href = '/stock-in'}>
+          新增入库单
+        </Button>
+      }>
         <Table
           columns={columns}
           dataSource={products}

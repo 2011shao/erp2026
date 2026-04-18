@@ -11,7 +11,6 @@ const ProductPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
   const location = useLocation();
   const [products, setProducts] = useState<any[]>([]);
-  const [shops, setShops] = useState<any[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,14 +36,12 @@ const ProductPage: React.FC = () => {
     
     setLoading(true);
     try {
-      const [productsRes, shopsRes, categoriesRes, brandsRes] = await Promise.all([
+      const [productsRes, categoriesRes, brandsRes] = await Promise.all([
         productApi.getAll(),
-        shopApi.getAllSimple(),
         categoryApi.getTree(),
         brandApi.getAll(),
       ]);
       setProducts(productsRes.data || []);
-      setShops(shopsRes.data || []);
       setCategories(categoriesRes.data || []);
       setBrands(brandsRes.data || []);
     } catch (error) {
@@ -136,21 +133,6 @@ const ProductPage: React.FC = () => {
       dataIndex: 'price',
       key: 'price',
       render: (price: string) => <span style={{ color: '#cf1322', fontWeight: 500 }}>¥{price}</span>,
-    },
-    {
-      title: '库存',
-      dataIndex: 'stock',
-      key: 'stock',
-      render: (stock: number) => (
-        <Tag color={stock > 20 ? 'green' : stock > 10 ? 'orange' : 'red'}>
-          {stock}
-        </Tag>
-      ),
-    },
-    {
-      title: '店铺',
-      dataIndex: ['shop', 'name'],
-      key: 'shop',
     },
     {
       title: '创建时间',
@@ -279,26 +261,6 @@ const ProductPage: React.FC = () => {
             rules={[{ required: true, message: '请输入成本价' }]}
           >
             <InputNumber style={{ width: '100%' }} placeholder="请输入成本价" min={0} />
-          </Form.Item>
-          <Form.Item
-            name="stock"
-            label="库存"
-            rules={[{ required: true, message: '请输入库存' }]}
-          >
-            <InputNumber style={{ width: '100%' }} placeholder="请输入库存" min={0} />
-          </Form.Item>
-          <Form.Item
-            name="shopId"
-            label="店铺"
-            rules={[{ required: true, message: '请选择店铺' }]}
-          >
-            <Select placeholder="请选择店铺">
-              {shops.map(shop => (
-                <Option key={shop.id} value={shop.id}>
-                  {shop.name}
-                </Option>
-              ))}
-            </Select>
           </Form.Item>
         </Form>
       </Modal>
