@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Table,
   Button,
@@ -14,9 +14,9 @@ import {
   Descriptions,
   Tag,
   Tooltip,
-  Tabs,
   Divider,
   Badge,
+  AutoComplete,
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -38,22 +38,14 @@ const StockInPage: React.FC = () => {
   const [visible, setVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [form] = Form.useForm();
   const [selectedOrder, setSelectedOrder] = useState<StockInOrder | null>(null);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [selectedSupplier, setSelectedSupplier] = useState<string>('');
-  const [searchParams, setSearchParams] = useState({
-    brand: '',
-    category: '',
-    model: '',
-  });
   const [categories, setCategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
-  const [serialNumberMethod, setSerialNumberMethod] = useState<'manual' | 'auto'>('manual');
-  const [serialNumbers, setSerialNumbers] = useState<string>('');
-  const [quantity, setQuantity] = useState(1);
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -104,18 +96,27 @@ const StockInPage: React.FC = () => {
     }
   };
 
-  const searchProducts = async () => {
+  const searchProducts = async (brand: string, category: string, model: string) => {
+    if (!model) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
     try {
       const response = await productApi.getAll({
-        brand: searchParams.brand,
-        categoryId: searchParams.category,
-        model: searchParams.model,
+        brand,
+        categoryId: category,
+        model,
       });
       if (response.success) {
-        setProducts(response.data || []);
+        setSearchResults(response.data || []);
       }
     } catch (error) {
       console.error('搜索商品失败', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -128,13 +129,8 @@ const StockInPage: React.FC = () => {
 
   const handleAdd = () => {
     form.resetFields();
-    setCurrentStep(1);
-    setSelectedSupplier('');
-    setSearchParams({ brand: '', category: '', model: '' });
     setSelectedProducts([]);
-    setSerialNumberMethod('manual');
-    setSerialNumbers('');
-    setQuantity(1);
+    setSearchResults([]);
     setVisible(true);
   };
 
@@ -185,61 +181,27 @@ const StockInPage: React.FC = () => {
     }
   };
 
-  const handleProductSelect = (product: Product) => {
-    const brand = brands.find(b => b.id === product.brandId);
-    setSelectedProducts([...selectedProducts, {
-      productId: product.id,
-      productName: product.name,
-      brand: brand?.name || '',
-      model: product.model,
-      quantity: 1,
-      price: product.price,
-      costPrice: product.costPrice || product.price,
-      serialNumbers: [],
-    }]);
-  };
 
-  const handleRemoveProduct = (index: number) => {
-    const newProducts = [...selectedProducts];
-    newProducts.splice(index, 1);
-    setSelectedProducts(newProducts);
-  };
-
-  const handleSerialNumberChange = (e: any, index: number) => {
-    const newProducts = [...selectedProducts];
-    newProducts[index].serialNumbers = e.target.value
-      .split(/[,;\s]+/)
-      .filter((s: string) => s.trim() !== '');
-    setSelectedProducts(newProducts);
-  };
-
-  const handleQuantityChange = (value: number, index: number) => {
-    const newProducts = [...selectedProducts];
-    newProducts[index].quantity = value;
-    setSelectedProducts(newProducts);
-  };
-
-  const handlePriceChange = (value: number, index: number) => {
-    const newProducts = [...selectedProducts];
-    newProducts[index].price = value;
-    setSelectedProducts(newProducts);
-  };
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
       
-      const items = selectedProducts.map(product => ({
-        productId: product.productId,
+      const items = (values.products || []).map((product: any) => ({
+        productId: product.productId || '',
         quantity: product.quantity,
         price: product.price,
         costPrice: product.costPrice,
-        serialNumbers: product.serialNumbers,
-        generateSerialNumbers: serialNumberMethod === 'auto',
+        serialNumbers: product.serialNumbers
+          ? product.serialNumbers
+              .split(/[,;\s]+/)
+              .filter((s: string) => s.trim() !== '')
+          : [],
+        generateSerialNumbers: false,
       }));
 
       const response = await stockInApi.create({
-        supplierId: selectedSupplier,
+        supplierId: values.supplierId,
         notes: values.notes,
         items,
       });
@@ -389,241 +351,185 @@ const StockInPage: React.FC = () => {
           </Button>,
         ]}
       >
-        <Tabs activeKey={currentStep.toString()} onChange={(key) => setCurrentStep(Number(key))}>
-          <TabPane tab="步骤 1: 选择供货商" key="1">
-            <Form form={form} layout="vertical">
-              <Form.Item
-                name="supplierId"
-                label="选择供货商"
-                rules={[{ required: true, message: '请选择供货商' }]}
-              >
-                <Select
-                  placeholder="请选择供货商"
-                  style={{ width: '100%' }}
-                  onChange={setSelectedSupplier}
-                >
-                  {suppliers.map((supplier) => (
-                    <Option key={supplier.id} value={supplier.id}>
-                      {supplier.name} - {supplier.contactName} {supplier.contactPhone}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-              <Form.Item
-                name="notes"
-                label="备注"
-              >
-                <TextArea rows={3} placeholder="请输入备注信息" />
-              </Form.Item>
-            </Form>
-            <div className="mt-4">
-              <Button type="primary" onClick={() => setCurrentStep(2)}>
-                下一步
-              </Button>
-            </div>
-          </TabPane>
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="supplierId"
+            label="选择供货商"
+            rules={[{ required: true, message: '请选择供货商' }]}
+          >
+            <Select
+              placeholder="请选择供货商"
+              style={{ width: '100%' }}
+            >
+              {suppliers.map((supplier) => (
+                <Option key={supplier.id} value={supplier.id}>
+                  {supplier.name} - {supplier.contactName} {supplier.contactPhone}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
           
-          <TabPane tab="步骤 2: 选择商品" key="2">
-            <div className="mb-4">
-              <h3 className="mb-2">搜索商品</h3>
-              <Space>
-                <Select
-                  placeholder="选择分类"
-                  value={searchParams.category}
-                  onChange={(value) => setSearchParams({ ...searchParams, category: value })}
-                  style={{ width: 150 }}
-                  allowClear
-                >
-                  {categories.map(category => (
-                    <React.Fragment key={category.id}>
-                      <Option value={category.id}>{category.name}</Option>
-                      {category.children?.map(child => (
-                        <Option key={child.id} value={child.id}>
-                          &nbsp;&nbsp;└ {child.name}
-                        </Option>
-                      ))}
-                    </React.Fragment>
-                  ))}
-                </Select>
-                <Select
-                  placeholder="选择品牌"
-                  value={searchParams.brand}
-                  onChange={(value) => setSearchParams({ ...searchParams, brand: value })}
-                  style={{ width: 150 }}
-                  allowClear
-                >
-                  {brands.map(brand => (
-                    <Option key={brand.id} value={brand.id}>{brand.name}</Option>
-                  ))}
-                </Select>
-                <Input
-                  placeholder="型号"
-                  value={searchParams.model}
-                  onChange={(e) => setSearchParams({ ...searchParams, model: e.target.value })}
-                  style={{ width: 150 }}
-                />
-                <Button type="primary" onClick={searchProducts}>
-                  搜索
-                </Button>
-              </Space>
-            </div>
-            
-            <div className="mb-4">
-              <h3 className="mb-2">搜索结果</h3>
-              <Table
-                columns={[
-                  { title: '商品名称', dataIndex: 'name', key: 'name' },
-                  { 
-                    title: '品牌', 
-                    dataIndex: 'brandId', 
-                    key: 'brand', 
-                    render: (brandId: string) => {
-                      const brand = brands.find(b => b.id === brandId);
-                      return brand?.name || '-';
-                    }
-                  },
-                  { title: '型号', dataIndex: 'model', key: 'model' },
-                  { title: '价格', dataIndex: 'price', key: 'price', render: (price: number) => `¥${price.toFixed(2)}` },
-                  { 
-                    title: '操作', 
-                    key: 'action', 
-                    render: (_: any, record: Product) => (
-                      <Button type="link" onClick={() => handleProductSelect(record)}>
-                        选择
-                      </Button>
-                    ) 
-                  },
-                ]}
-                dataSource={products}
-                rowKey="id"
-                pagination={{ pageSize: 5 }}
-              />
-            </div>
-            
-            <div className="mb-4">
-              <h3 className="mb-2">已选商品</h3>
-              <Table
-                columns={[
-                  { title: '商品名称', dataIndex: 'productName', key: 'productName' },
-                  { title: '品牌', dataIndex: 'brand', key: 'brand' },
-                  { title: '型号', dataIndex: 'model', key: 'model' },
-                  { 
-                    title: '数量', 
-                    key: 'quantity', 
-                    render: (_: any, record: any, index: number) => (
-                      <InputNumber 
-                        min={1} 
-                        value={record.quantity} 
-                        onChange={(value) => handleQuantityChange(value || 1, index)} 
-                      />
-                    ) 
-                  },
-                  { 
-                    title: '成本价', 
-                    key: 'costPrice', 
-                    render: (_: any, record: any, index: number) => (
-                      <InputNumber 
-                        min={0} 
-                        value={record.costPrice} 
-                        onChange={(value) => {
-                          const newProducts = [...selectedProducts];
-                          newProducts[index].costPrice = value || 0;
-                          setSelectedProducts(newProducts);
-                        }} 
-                      />
-                    ) 
-                  },
-                  { 
-                    title: '售价', 
-                    key: 'price', 
-                    render: (_: any, record: any, index: number) => (
-                      <InputNumber 
-                        min={0} 
-                        value={record.price} 
-                        onChange={(value) => handlePriceChange(value || 0, index)} 
-                      />
-                    ) 
-                  },
-                  { 
-                    title: '串码', 
-                    key: 'serialNumbers', 
-                    render: (_: any, record: any, index: number) => (
-                      <TextArea 
-                        rows={2} 
-                        placeholder="请输入串码，多个串码用逗号、分号或空格分隔" 
-                        value={record.serialNumbers.join('\n')} 
-                        onChange={(e) => handleSerialNumberChange(e, index)} 
-                      />
-                    ) 
-                  },
-                  { 
-                    title: '操作', 
-                    key: 'action', 
-                    render: (_: any, record: any, index: number) => (
-                      <Button type="link" danger onClick={() => handleRemoveProduct(index)}>
-                        删除
-                      </Button>
-                    ) 
-                  },
-                ]}
-                dataSource={selectedProducts}
-                rowKey={(record, index) => index}
-              />
-            </div>
-            
-            <div className="mt-4">
-              <Space>
-                <Button onClick={() => setCurrentStep(1)}>
-                  上一步
-                </Button>
-                <Button type="primary" onClick={() => setCurrentStep(3)}>
-                  下一步
-                </Button>
-              </Space>
-            </div>
-          </TabPane>
+          <Form.Item
+            name="notes"
+            label="备注"
+          >
+            <TextArea rows={3} placeholder="请输入备注信息" />
+          </Form.Item>
           
-          <TabPane tab="步骤 3: 确认信息" key="3">
-            <Descriptions column={1}>
-              <Descriptions.Item label="供货商">
-                {suppliers.find(s => s.id === selectedSupplier)?.name || '-'}
-              </Descriptions.Item>
-              <Descriptions.Item label="商品清单">
-                <Table
-                  columns={[
-                    { title: '商品名称', dataIndex: 'productName', key: 'productName' },
-                    { title: '品牌', dataIndex: 'brand', key: 'brand' },
-                    { title: '型号', dataIndex: 'model', key: 'model' },
-                    { title: '数量', dataIndex: 'quantity', key: 'quantity' },
-                    { title: '单价', dataIndex: 'price', key: 'price', render: (price: number) => `¥${price.toFixed(2)}` },
-                    { 
-                      title: '串码数量', 
-                      key: 'serialNumbersCount', 
-                      render: (_, record: any) => record.serialNumbers.length 
-                    },
-                  ]}
-                  dataSource={selectedProducts}
-                  rowKey={(record, index) => index}
-                  pagination={false}
-                />
-              </Descriptions.Item>
-              <Descriptions.Item label="总金额">
-                ¥{selectedProducts.reduce((total, product) => total + product.quantity * product.price, 0).toFixed(2)}
-              </Descriptions.Item>
-            </Descriptions>
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-4">商品信息</h3>
             
-            <div className="mt-4">
-              <Space>
-                <Button onClick={() => setCurrentStep(2)}>
-                  上一步
-                </Button>
-                <Button type="primary" onClick={handleSubmit}>
-                  确认创建
-                </Button>
-              </Space>
+            <div className="mb-4">
+              <h4 className="font-medium mb-2">添加商品</h4>
+              <Form.List name="products">
+                {(fields, { add, remove }) => (
+                  <div>
+                    {fields.map((field, index) => (
+                      <Card key={field.key} className="mb-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <Form.Item
+                            {...field}
+                            name={[field.name, 'categoryId']}
+                            label="分类"
+                            rules={[{ required: true, message: '请选择分类' }]}
+                          >
+                            <Select placeholder="选择分类" style={{ width: '100%' }} allowClear>
+                              {categories.map(category => (
+                                <React.Fragment key={category.id}>
+                                  <Option value={category.id}>{category.name}</Option>
+                                  {category.children?.map(child => (
+                                    <Option key={child.id} value={child.id}>
+                                      &nbsp;&nbsp;└ {child.name}
+                                    </Option>
+                                  ))}
+                                </React.Fragment>
+                              ))}
+                            </Select>
+                          </Form.Item>
+                          
+                          <Form.Item
+                            {...field}
+                            name={[field.name, 'brandId']}
+                            label="品牌"
+                            rules={[{ required: true, message: '请选择品牌' }]}
+                          >
+                            <Select placeholder="选择品牌" style={{ width: '100%' }} allowClear>
+                              {brands.map(brand => (
+                                <Option key={brand.id} value={brand.id}>{brand.name}</Option>
+                              ))}
+                            </Select>
+                          </Form.Item>
+                          
+                          <Form.Item
+                            {...field}
+                            name={[field.name, 'model']}
+                            label="型号"
+                            rules={[{ required: true, message: '请输入型号' }]}
+                          >
+                            <AutoComplete
+                              options={searchResults.map(product => ({
+                                value: product.model,
+                                label: `${product.name} - ${brands.find(b => b.id === product.brandId)?.name} - ${product.model}`,
+                              }))}
+                              onSelect={(value, option) => {
+                                const selectedProduct = searchResults.find(p => p.model === value);
+                                if (selectedProduct) {
+                                  form.setFieldsValue({
+                                    products: fields.map((f, i) => {
+                                      if (i === index) {
+                                        return {
+                                          ...fields[i].value,
+                                          productId: selectedProduct.id,
+                                          productName: selectedProduct.name,
+                                          price: selectedProduct.price,
+                                          costPrice: selectedProduct.costPrice || selectedProduct.price,
+                                        };
+                                      }
+                                      return f.value;
+                                    }),
+                                  });
+                                }
+                              }}
+                              onSearch={(value) => {
+                                const currentField = fields[index].value;
+                                const brandId = currentField?.brandId || '';
+                                const categoryId = currentField?.categoryId || '';
+                                
+                                if (searchTimeoutRef.current) {
+                                  clearTimeout(searchTimeoutRef.current);
+                                }
+                                searchTimeoutRef.current = setTimeout(() => {
+                                  searchProducts(brandId, categoryId, value);
+                                }, 300);
+                              }}
+                            >
+                              <Input placeholder="输入型号" />
+                            </AutoComplete>
+                          </Form.Item>
+                          
+                          <Form.Item
+                            {...field}
+                            name={[field.name, 'productName']}
+                            label="商品名称"
+                          >
+                            <Input placeholder="商品名称" />
+                          </Form.Item>
+                          
+                          <Form.Item
+                            {...field}
+                            name={[field.name, 'quantity']}
+                            label="数量"
+                            rules={[{ required: true, message: '请输入数量' }, { type: 'number', min: 1 }]}
+                          >
+                            <InputNumber min={1} placeholder="输入数量" style={{ width: '100%' }} />
+                          </Form.Item>
+                          
+                          <Form.Item
+                            {...field}
+                            name={[field.name, 'costPrice']}
+                            label="成本价"
+                            rules={[{ required: true, message: '请输入成本价' }, { type: 'number', min: 0 }]}
+                          >
+                            <InputNumber min={0} placeholder="输入成本价" style={{ width: '100%' }} />
+                          </Form.Item>
+                          
+                          <Form.Item
+                            {...field}
+                            name={[field.name, 'price']}
+                            label="售价"
+                            rules={[{ required: true, message: '请输入售价' }, { type: 'number', min: 0 }]}
+                          >
+                            <InputNumber min={0} placeholder="输入售价" style={{ width: '100%' }} />
+                          </Form.Item>
+                          
+                          <Form.Item
+                            {...field}
+                            name={[field.name, 'serialNumbers']}
+                            label="串码"
+                            rules={[{ required: true, message: '请输入串码' }]}
+                          >
+                            <TextArea 
+                              rows={2} 
+                              placeholder="请输入串码，多个串码用逗号、分号或空格分隔" 
+                            />
+                          </Form.Item>
+                        </div>
+                        <div className="mt-3 text-right">
+                          <Button danger onClick={() => remove(field.name)}>
+                            删除商品
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                    <Button type="dashed" onClick={() => add()} block>
+                      <PlusOutlined /> 添加商品
+                    </Button>
+                  </div>
+                )}
+              </Form.List>
             </div>
-          </TabPane>
-        </Tabs>
+          </div>
+        </Form>
       </Modal>
 
       <Modal
