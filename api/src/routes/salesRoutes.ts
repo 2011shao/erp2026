@@ -70,7 +70,11 @@ router.post('/', authenticate, async (req, res, next) => {
       if (!product) {
         throw new ApiError(404, `Product ${item.productId} not found`);
       }
-      if (product.stock < item.quantity) {
+      // 检查库存数量
+      const serialNumberCount = await prisma.serialNumber.count({
+        where: { productId: item.productId, status: 'in_stock' }
+      });
+      if (serialNumberCount < item.quantity) {
         throw new ApiError(400, `Insufficient stock for product ${product.name}`);
       }
       totalAmount += item.price * item.quantity;
@@ -124,16 +128,13 @@ router.post('/', authenticate, async (req, res, next) => {
               oldStatus: 'in_stock',
               newStatus: 'sold',
               reason: 'Sale',
-              operatorId: req.user.id
+              operatorId: req.user?.id || ''
             }
           });
         }
       }
 
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } }
-      });
+      // 库存管理现在通过串号系统实现，不需要更新商品库存字段
 
       await prisma.inventoryLog.create({
         data: {
@@ -211,7 +212,7 @@ router.post('/:id/serial-numbers', authenticate, async (req, res, next) => {
           oldStatus: 'in_stock',
           newStatus: 'sold',
           reason: 'Sale',
-          operatorId: req.user.id
+          operatorId: req.user?.id || ''
         }
       });
 
@@ -259,7 +260,7 @@ router.delete('/:id/serial-numbers/:serialNumberId', authenticate, async (req, r
         oldStatus: 'sold',
         newStatus: 'in_stock',
         reason: 'Cancel sale',
-        operatorId: req.user.id
+        operatorId: req.user?.id || ''
       }
     });
 
@@ -392,11 +393,7 @@ router.post('/:id/return', authenticate, async (req, res, next) => {
 
     // 处理退货逻辑
     for (const item of items) {
-      // 1. 更新商品库存
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: { stock: { increment: item.quantity } }
-      });
+      // 库存管理现在通过串号系统实现，不需要更新商品库存字段
 
       // 2. 更新串号状态
       if (item.serialNumbers && Array.isArray(item.serialNumbers)) {
@@ -416,7 +413,7 @@ router.post('/:id/return', authenticate, async (req, res, next) => {
               oldStatus: 'sold',
               newStatus: 'returned',
               reason: `Return: ${reason}`,
-              operatorId: req.user.id
+              operatorId: req.user?.id || ''
             }
           });
         }
@@ -484,11 +481,7 @@ router.post('/:id/exchange', authenticate, async (req, res, next) => {
 
     // 处理退货部分
     for (const item of returnItems) {
-      // 1. 更新商品库存
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: { stock: { increment: item.quantity } }
-      });
+      // 库存管理现在通过串号系统实现，不需要更新商品库存字段
 
       // 2. 更新串号状态
       if (item.serialNumbers && Array.isArray(item.serialNumbers)) {
@@ -508,7 +501,7 @@ router.post('/:id/exchange', authenticate, async (req, res, next) => {
               oldStatus: 'sold',
               newStatus: 'returned',
               reason: `Exchange: ${reason}`,
-              operatorId: req.user.id
+              operatorId: req.user?.id || ''
             }
           });
         }
@@ -529,10 +522,7 @@ router.post('/:id/exchange', authenticate, async (req, res, next) => {
     // 处理换货部分
     for (const item of exchangeItems) {
       // 1. 更新商品库存
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } }
-      });
+      // 库存管理现在通过串号系统实现，不需要更新商品库存字段
 
       // 2. 更新串号状态
       if (item.serialNumbers && Array.isArray(item.serialNumbers)) {
@@ -551,7 +541,7 @@ router.post('/:id/exchange', authenticate, async (req, res, next) => {
               oldStatus: 'in_stock',
               newStatus: 'sold',
               reason: `Exchange: ${reason}`,
-              operatorId: req.user.id
+              operatorId: req.user?.id || ''
             }
           });
         }
@@ -735,7 +725,7 @@ router.post('/:id/calculate-commission', authenticate, async (req, res, next) =>
     const commissionRecord = await prisma.commissionRecord.create({
       data: {
         orderId: id,
-        userId: userId || req.user.id,
+        userId: userId || req.user?.id || '',
         amount: totalCommission,
         status: 'pending'
       }

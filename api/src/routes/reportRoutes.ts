@@ -55,20 +55,36 @@ router.get('/inventory-status', authenticate, async (req, res, next) => {
       include: { shop: { select: { id: true, name: true } } },
     });
 
-    const lowStock = products.filter((p) => p.stock < 10).length;
-    const totalProducts = products.length;
-    const totalStock = products.reduce((sum, p) => sum + p.stock, 0);
-    const totalValue = products.reduce((sum, p) => sum + p.price.toNumber() * p.stock, 0);
-
+    // 计算库存相关数据
+    let lowStock = 0;
+    let totalStock = 0;
+    let totalValue = 0;
     const byCategory: any = {};
+
     for (const product of products) {
-      if (!byCategory[product.category]) {
-        byCategory[product.category] = { count: 0, stock: 0, value: 0 };
+      // 计算当前商品的库存数量
+      const serialNumberCount = await prisma.serialNumber.count({
+        where: { productId: product.id, status: 'in_stock' }
+      });
+
+      if (serialNumberCount < 10) {
+        lowStock++;
       }
-      byCategory[product.category].count++;
-      byCategory[product.category].stock += product.stock;
-      byCategory[product.category].value += product.price.toNumber() * product.stock;
+
+      totalStock += serialNumberCount;
+      totalValue += product.price.toNumber() * serialNumberCount;
+
+      // 按分类统计
+      const categoryId = product.categoryId || 'uncategorized';
+      if (!byCategory[categoryId]) {
+        byCategory[categoryId] = { count: 0, stock: 0, value: 0 };
+      }
+      byCategory[categoryId].count++;
+      byCategory[categoryId].stock += serialNumberCount;
+      byCategory[categoryId].value += product.price.toNumber() * serialNumberCount;
     }
+
+    const totalProducts = products.length;
 
     res.json({
       success: true,

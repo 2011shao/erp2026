@@ -108,7 +108,7 @@ export const createSupplier = async (req: AuthenticatedRequest, res: Response, n
         contactPosition,
         status: status || 'active',
         notes,
-        shopId: req.user!.shopId
+        shopId: req.user!.shopId || ''
       }
     });
 

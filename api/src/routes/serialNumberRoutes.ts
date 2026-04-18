@@ -135,7 +135,7 @@ router.post('/', authenticate, async (req: AuthenticatedRequest, res, next) => {
         oldStatus: 'none',
         newStatus: 'in_stock',
         reason: '新增串号',
-        operatorId: req.user.id,
+        operatorId: req.user?.id || '',
       },
     });
 
@@ -188,7 +188,7 @@ router.post('/import', authenticate, async (req: AuthenticatedRequest, res, next
             oldStatus: 'none',
             newStatus: 'in_stock',
             reason: '批量导入',
-            operatorId: req.user.id,
+            operatorId: req.user?.id || '',
           },
         });
 
@@ -251,7 +251,7 @@ router.patch('/:id/status', authenticate, async (req: AuthenticatedRequest, res,
         oldStatus: serialNumber.status,
         newStatus: status,
         reason,
-        operatorId: req.user.id,
+        operatorId: req.user?.id || '',
       },
     });
 

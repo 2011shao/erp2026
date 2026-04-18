@@ -132,17 +132,13 @@ router.post('/', authenticate, async (req, res, next) => {
               oldStatus: serialNumber.status,
               newStatus: 'in_stock',
               reason: 'Purchase',
-              operatorId: req.user.id
+              operatorId: req.user?.id || ''
             }
           });
         }
       }
 
-      // 更新商品库存
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: { stock: { increment: item.quantity } }
-      });
+      // 库存管理现在通过串号系统实现，不需要更新商品库存字段
 
       // 创建库存日志
       await prisma.inventoryLog.create({
@@ -222,7 +218,7 @@ router.post('/:id/serial-numbers', authenticate, async (req, res, next) => {
           oldStatus: serialNumber.status,
           newStatus: 'in_stock',
           reason: 'Purchase',
-          operatorId: req.user.id
+          operatorId: req.user?.id || ''
         }
       });
 
@@ -265,14 +261,14 @@ router.delete('/:id/serial-numbers/:serialNumberId', authenticate, async (req, r
     });
 
     await prisma.serialNumberLog.create({
-      data: {
-        serialNumberId: serialNumberId,
-        oldStatus: serialNumber.status,
-        newStatus: 'in_stock',
-        reason: 'Cancel purchase binding',
-        operatorId: req.user.id
-      }
-    });
+        data: {
+          serialNumberId: serialNumberId,
+          oldStatus: serialNumber.status,
+          newStatus: 'in_stock',
+          reason: 'Cancel purchase binding',
+          operatorId: req.user?.id || ''
+        }
+      });
 
     res.json({
       success: true,
@@ -519,17 +515,13 @@ router.post('/returns', authenticate, async (req, res, next) => {
               oldStatus: serialNumber.status,
               newStatus: 'returned_to_supplier',
               reason: 'Purchase return',
-              operatorId: req.user.id
+              operatorId: req.user?.id || ''
             }
           });
         }
       }
 
-      // 更新商品库存
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } }
-      });
+      // 库存管理现在通过串号系统实现，不需要更新商品库存字段
 
       // 创建库存日志
       await prisma.inventoryLog.create({
@@ -596,7 +588,7 @@ router.post('/returns/:id/serial-numbers', authenticate, async (req, res, next) 
           oldStatus: serialNumber.status,
           newStatus: 'returned_to_supplier',
           reason: 'Purchase return',
-          operatorId: req.user.id
+          operatorId: req.user?.id || ''
         }
       });
 
@@ -641,7 +633,7 @@ router.delete('/returns/:id/serial-numbers/:serialNumberId', authenticate, async
         oldStatus: serialNumber.status,
         newStatus: 'in_stock',
         reason: 'Cancel purchase return binding',
-        operatorId: req.user.id
+        operatorId: req.user?.id || ''
       }
     });
 

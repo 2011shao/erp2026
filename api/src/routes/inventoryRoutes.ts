@@ -29,7 +29,17 @@ router.get('/', authenticate, async (req, res, next) => {
     });
 
     if (lowStock) {
-      products = products.filter((p) => p.stock < 10);
+      // 过滤出库存低于10的商品
+      const lowStockProducts = [];
+      for (const product of products) {
+        const serialNumberCount = await prisma.serialNumber.count({
+          where: { productId: product.id, status: 'in_stock' }
+        });
+        if (serialNumberCount < 10) {
+          lowStockProducts.push(product);
+        }
+      }
+      products = lowStockProducts;
     }
 
     const total = await prisma.product.count({ where });
@@ -71,14 +81,23 @@ router.get('/alerts', authenticate, async (req, res, next) => {
         brand: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } }
       },
-      orderBy: { stock: 'asc' },
+      orderBy: { createdAt: 'asc' },
     });
 
     // 过滤出库存低于最小库存阈值的商品
-    const alertProducts = products.filter(product => {
+    const alertProducts = [];
+    for (const product of products) {
+      const serialNumberCount = await prisma.serialNumber.count({
+        where: { productId: product.id, status: 'in_stock' }
+      });
       const minStock = product.minStock || 10;
-      return product.stock < minStock;
-    });
+      if (serialNumberCount < minStock) {
+        alertProducts.push({
+          ...product,
+          stock: serialNumberCount
+        });
+      }
+    }
 
     // 计算预警级别
     const processedAlertProducts = alertProducts.map(product => {
@@ -188,7 +207,7 @@ router.get('/alert-stats', authenticate, async (req, res, next) => {
 
     const products = await prisma.product.findMany({
       where,
-      select: { id: true, stock: true, minStock: true },
+      select: { id: true, minStock: true },
     });
 
     // 统计预警级别
@@ -197,9 +216,12 @@ router.get('/alert-stats', authenticate, async (req, res, next) => {
     let lowAlert = 0;
     let totalProducts = products.length;
 
-    products.forEach(product => {
+    for (const product of products) {
+      const serialNumberCount = await prisma.serialNumber.count({
+        where: { productId: product.id, status: 'in_stock' }
+      });
       const minStock = product.minStock || 10;
-      const stockRatio = product.stock / minStock;
+      const stockRatio = serialNumberCount / minStock;
       
       if (stockRatio <= 0.2) {
         highAlert++;
@@ -208,7 +230,7 @@ router.get('/alert-stats', authenticate, async (req, res, next) => {
       } else if (stockRatio <= 0.8) {
         lowAlert++;
       }
-    });
+    }
 
     res.json({
       success: true,
@@ -282,27 +304,42 @@ router.post('/adjust', authenticate, async (req, res, next) => {
       throw new ApiError(404, 'Product not found');
     }
 
-    const newStock = type === 'in' ? product.stock + quantity : product.stock - quantity;
+    // 计算当前库存数量
+    const currentStock = await prisma.serialNumber.count({
+      where: { productId, status: 'in_stock' }
+    });
+
+    const newStock = type === 'in' ? currentStock + quantity : currentStock - quantity;
 
     if (newStock < 0) {
       throw new ApiError(400, 'Insufficient stock');
     }
 
-    const [updatedProduct, log] = await Promise.all([
-      prisma.product.update({
-        where: { id: productId },
-        data: { stock: newStock },
-      }),
-      prisma.inventoryLog.create({
+    // 创建或更新串号
+    const serialNumbers = [];
+    for (let i = 0; i < quantity; i++) {
+      const serialNumber = await prisma.serialNumber.create({
         data: {
+          serialNumber: `SN${Date.now()}${i}`,
           productId,
-          quantity,
-          type,
-          reason,
           shopId,
-        },
-      }),
-    ]);
+          status: 'in_stock'
+        }
+      });
+      serialNumbers.push(serialNumber);
+    }
+
+    const log = await prisma.inventoryLog.create({
+      data: {
+        productId,
+        quantity,
+        type,
+        reason,
+        shopId,
+      },
+    });
+
+    const updatedProduct = await prisma.product.findUnique({ where: { id: productId } });
 
     res.json({
       success: true,
@@ -329,24 +366,52 @@ router.post('/stocktake', authenticate, async (req, res, next) => {
           return { productId: item.productId, success: false, error: 'Product not found' };
         }
 
-        const quantityDiff = item.actualStock - product.stock;
+        // 计算当前库存数量
+        const currentStock = await prisma.serialNumber.count({
+          where: { productId: item.productId, status: 'in_stock' }
+        });
+
+        const quantityDiff = item.actualStock - currentStock;
         const type = quantityDiff > 0 ? 'in' : 'out';
 
-        const [updatedProduct, log] = await Promise.all([
-          prisma.product.update({
-            where: { id: item.productId },
-            data: { stock: item.actualStock },
-          }),
-          prisma.inventoryLog.create({
-            data: {
-              productId: item.productId,
-              quantity: Math.abs(quantityDiff),
-              type,
-              reason: 'Stocktake adjustment',
-              shopId,
-            },
-          }),
-        ]);
+        // 创建或更新串号
+        if (quantityDiff > 0) {
+          // 增加库存
+          for (let i = 0; i < quantityDiff; i++) {
+            await prisma.serialNumber.create({
+              data: {
+                serialNumber: `SN${Date.now()}${i}`,
+                productId: item.productId,
+                shopId,
+                status: 'in_stock'
+              }
+            });
+          }
+        } else if (quantityDiff < 0) {
+          // 减少库存
+          const serialNumbers = await prisma.serialNumber.findMany({
+            where: { productId: item.productId, status: 'in_stock' },
+            take: Math.abs(quantityDiff)
+          });
+          for (const sn of serialNumbers) {
+            await prisma.serialNumber.update({
+              where: { id: sn.id },
+              data: { status: 'sold' }
+            });
+          }
+        }
+
+        const log = await prisma.inventoryLog.create({
+          data: {
+            productId: item.productId,
+            quantity: Math.abs(quantityDiff),
+            type,
+            reason: 'Stocktake adjustment',
+            shopId,
+          },
+        });
+
+        const updatedProduct = await prisma.product.findUnique({ where: { id: item.productId } });
 
         return { productId: item.productId, success: true, product: updatedProduct, log };
       })

@@ -55,12 +55,14 @@ router.get('/', authenticate, async (req, res, next) => {
 
 router.get('/categories', authenticate, async (req, res, next) => {
   try {
-    const products = await prisma.product.findMany({
-      select: { category: true },
-      distinct: ['category'],
+    const categories = await prisma.category.findMany({
+      where: {
+        products: {
+          some: {}
+        }
+      },
+      select: { id: true, name: true }
     });
-
-    const categories = products.map((p) => p.category);
 
     res.json({
       success: true,
