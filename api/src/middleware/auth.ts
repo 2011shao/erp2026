@@ -96,8 +96,8 @@ export const requirePermission = (permission: string | string[]) => {
 
       // 收集用户的所有权限
       const userPermissions = new Set<string>();
-      user.userRoles.forEach(userRole => {
-        userRole.role.rolePermissions.forEach(rp => userPermissions.add(rp.permission.code));
+      user.userRoles.forEach((userRole: any) => {
+        userRole.role.rolePermissions.forEach((rp: any) => userPermissions.add(rp.permission.code));
       });
 
       // 检查用户是否有所需权限

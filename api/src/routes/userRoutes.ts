@@ -242,7 +242,7 @@ router.get('/:id/roles', authenticate, authorize(['admin']), async (req, res, ne
 
     res.json({
       success: true,
-      data: user.userRoles.map(ur => ur.role),
+      data: user.userRoles.map((ur: any) => ur.role),
     });
   } catch (error) {
     next(error);
