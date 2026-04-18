@@ -128,6 +128,14 @@ const StockInPage: React.FC = () => {
 
   const handleAdd = () => {
     form.resetFields();
+    form.setFieldsValue({
+      products: [{
+        quantity: 1,
+        costPrice: 0,
+        price: 0,
+        serialNumbers: '',
+      }]
+    });
     setSelectedProducts([]);
     setSearchResults([]);
     setVisible(true);
@@ -440,6 +448,8 @@ const StockInPage: React.FC = () => {
                                           ...fields[i].value,
                                           productId: selectedProduct.id,
                                           productName: selectedProduct.name,
+                                          brandId: selectedProduct.brandId,
+                                          categoryId: selectedProduct.categoryId,
                                           price: selectedProduct.price,
                                           costPrice: selectedProduct.costPrice || selectedProduct.price,
                                         };
