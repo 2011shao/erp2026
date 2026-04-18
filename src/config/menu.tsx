@@ -1,4 +1,4 @@
-import { HomeOutlined, ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarOutlined, BarChartOutlined, UserOutlined, SettingOutlined, TagsOutlined, DollarCircleOutlined, ShoppingCartOutlined, SwapOutlined, TeamOutlined, InboxOutlined } from '@ant-design/icons';
+import { HomeOutlined, ShopOutlined, ProductOutlined, StockOutlined, ShoppingOutlined, DollarOutlined, BarChartOutlined, UserOutlined, SettingOutlined, TagsOutlined, DollarCircleOutlined, ShoppingCartOutlined, SwapOutlined, TeamOutlined, InboxOutlined, PlusOutlined } from '@ant-design/icons';
 
 export interface MenuItem {
   key: string;
