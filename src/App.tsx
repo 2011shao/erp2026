@@ -6,7 +6,6 @@ import { useAuthStore, filterMenuByPermission } from './store/authStore';
 import { menuConfig } from './config/menu';
 import HomePage from './pages/HomePage';
 import ShopPage from './pages/ShopPage';
-import ProductPage from './pages/ProductPage';
 import InventoryPage from './pages/InventoryPage';
 import FinancialPage from './pages/FinancialPage';
 import SerialNumberPage from './pages/SerialNumberPage';
@@ -79,12 +78,10 @@ const App: React.FC = () => {
     
     if (path === '/shops') {
       items.push({ title: <span>店铺管理</span> });
-    } else if (path === '/products') {
-      items.push({ title: <span>商品管理</span> });
     } else if (path === '/categories') {
-      items.push({ title: <span>商品管理</span> }, { title: <span>分类管理</span> });
+      items.push({ title: <span>系统设置</span> }, { title: <span>分类管理</span> });
     } else if (path === '/brands') {
-      items.push({ title: <span>商品管理</span> }, { title: <span>品牌管理</span> });
+      items.push({ title: <span>系统设置</span> }, { title: <span>品牌管理</span> });
     } else if (path === '/inventory') {
       items.push({ title: <span>库存管理</span> });
     } else if (path === '/sales') {
@@ -355,8 +352,6 @@ const App: React.FC = () => {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/shops" element={<ShopPage />} />
                 <Route path="/shops/add" element={<ShopPage />} />
-                <Route path="/products" element={<ProductPage />} />
-                <Route path="/products/add" element={<ProductPage />} />
                 <Route path="/categories" element={<CategoryPage />} />
                 <Route path="/brands" element={<BrandPage />} />
                 <Route path="/inventory" element={<InventoryPage />} />

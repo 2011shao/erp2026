@@ -40,66 +40,30 @@ export const menuConfig: MenuItem[] = [
       }
     ]
   },
+
   {
     key: '3',
-    icon: <ProductOutlined />,
-    label: '商品管理',
-    path: '/products',
-    permission: 'product.manage',
-    children: [
-      {
-        key: '3-1',
-        icon: <ProductOutlined />,
-        label: '商品列表',
-        path: '/products',
-        permission: 'product.view'
-      },
-      {
-        key: '3-2',
-        icon: <ProductOutlined />,
-        label: '添加商品',
-        path: '/products/add',
-        permission: 'product.create'
-      },
-      {
-        key: '3-3',
-        icon: <TagsOutlined />,
-        label: '分类管理',
-        path: '/categories',
-        permission: 'product.manage'
-      },
-      {
-        key: '3-4',
-        icon: <TagsOutlined />,
-        label: '品牌管理',
-        path: '/brands',
-        permission: 'product.manage'
-      }
-    ]
-  },
-  {
-    key: '4',
     icon: <StockOutlined />,
     label: '库存管理',
     path: '/inventory',
     permission: 'inventory.manage',
     children: [
       {
-        key: '4-1',
+        key: '3-1',
         icon: <StockOutlined />,
         label: '库存列表',
         path: '/inventory',
         permission: 'inventory.view'
       },
       {
-        key: '4-2',
+        key: '3-2',
         icon: <InboxOutlined />,
         label: '入库管理',
         path: '/stock-in',
         permission: 'stockIn.manage'
       },
       {
-        key: '4-3',
+        key: '3-3',
         icon: <TagsOutlined />,
         label: '串号管理',
         path: '/serial-numbers',
@@ -108,21 +72,21 @@ export const menuConfig: MenuItem[] = [
     ]
   },
   {
-    key: '5',
+    key: '4',
     icon: <ShoppingOutlined />,
     label: '销售管理',
     path: '/sales',
     permission: 'sales.manage',
     children: [
       {
-        key: '5-1',
+        key: '4-1',
         icon: <ShoppingOutlined />,
         label: '销售订单',
         path: '/sales',
         permission: 'sales.view'
       },
       {
-        key: '5-2',
+        key: '4-2',
         icon: <DollarCircleOutlined />,
         label: '收银台',
         path: '/cashier',
@@ -131,21 +95,21 @@ export const menuConfig: MenuItem[] = [
     ]
   },
   {
-    key: '6',
+    key: '5',
     icon: <TeamOutlined />,
     label: '供货商管理',
     path: '/suppliers',
     permission: 'supplier.manage',
     children: [
       {
-        key: '6-1',
+        key: '5-1',
         icon: <TeamOutlined />,
         label: '供应商列表',
         path: '/suppliers',
         permission: 'supplier.view'
       },
       {
-        key: '6-2',
+        key: '5-2',
         icon: <PlusOutlined />,
         label: '新增供应商',
         path: '/suppliers/add',
@@ -155,74 +119,88 @@ export const menuConfig: MenuItem[] = [
   },
 
   {
-    key: '7',
+    key: '6',
     icon: <ShoppingCartOutlined />,
     label: '采购管理',
     path: '/purchases',
     permission: 'purchase.manage'
   },
   {
-    key: '8',
+    key: '7',
     icon: <StockOutlined />,
     label: '仓库管理',
     path: '/warehouses',
     permission: 'warehouse.manage'
   },
   {
-    key: '9',
+    key: '8',
     icon: <SwapOutlined />,
     label: '调拨管理',
     path: '/transfers',
     permission: 'transfer.manage'
   },
   {
-    key: '10',
+    key: '9',
     icon: <StockOutlined />,
     label: '库存盘点',
     path: '/stocktakes',
     permission: 'stocktake.manage'
   },
   {
-    key: '11',
+    key: '10',
     icon: <DollarOutlined />,
     label: '财务管理',
     path: '/financial',
     permission: 'financial.manage'
   },
   {
-    key: '12',
+    key: '11',
     icon: <BarChartOutlined />,
     label: '报表分析',
     path: '/reports',
     permission: 'report.manage'
   },
   {
-    key: '13',
+    key: '12',
     icon: <UserOutlined />,
     label: '用户管理',
     path: '/users',
     permission: 'user.manage'
   },
   {
-    key: '14',
+    key: '13',
     icon: <SettingOutlined />,
     label: '系统设置',
     path: '/settings',
     permission: 'system.manage',
     children: [
       {
-        key: '14-1',
+        key: '13-1',
         icon: <SettingOutlined />,
         label: '角色管理',
         path: '/settings/roles',
         permission: 'role.manage'
       },
       {
-        key: '14-2',
+        key: '13-2',
         icon: <SettingOutlined />,
         label: '权限管理',
         path: '/settings/permissions',
         permission: 'permission.manage'
+      },
+      {
+        key: '13-3',
+        icon: <TagsOutlined />,
+        label: '分类管理',
+        path: '/categories',
+        permission: 'product.manage'
+      },
+      {
+        key: '13-4',
+        icon: <TagsOutlined />,
+        label: '品牌管理',
+        path: '/brands',
+        permission: 'product.manage'
       }
     ]
   }
