@@ -241,7 +241,7 @@ const StockInPage: React.FC = () => {
       title: '总金额',
       dataIndex: 'totalAmount',
       key: 'totalAmount',
-      render: (amount: number) => `¥${amount.toFixed(2)}`,
+      render: (amount: any) => `¥${Number(amount).toFixed(2)}`,
     },
     {
       title: '状态',
@@ -579,7 +579,7 @@ const StockInPage: React.FC = () => {
                 { title: '品牌', dataIndex: 'product', key: 'brand', render: (product: any) => product?.brand?.name || '-' },
                 { title: '型号', dataIndex: 'product', key: 'model', render: (product: any) => product?.model || '-' },
                 { title: '数量', dataIndex: 'quantity', key: 'quantity' },
-                { title: '单价', dataIndex: 'price', key: 'price', render: (price: number) => `¥${price.toFixed(2)}` },
+                { title: '单价', dataIndex: 'price', key: 'price', render: (price: any) => `¥${Number(price).toFixed(2)}` },
                 { title: '串码数量', key: 'serialNumbersCount', render: (_, record: any) => record.serialNumbers.length },
               ]}
               dataSource={selectedOrder.items}
