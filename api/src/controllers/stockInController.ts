@@ -168,12 +168,28 @@ export const createStockInOrder = async (req: AuthenticatedRequest, res: Respons
       throw new ApiError(400, 'At least one item is required');
     }
 
+    // 确保用户已认证
+    if (!req.user) {
+      throw new ApiError(401, 'User not authenticated');
+    }
+
+    // 确保 shopId 存在且有效
+    let shopId = req.user.shopId;
+    if (!shopId) {
+      // 尝试获取第一个可用的店铺
+      const defaultShop = await prisma.shop.findFirst();
+      if (!defaultShop) {
+        throw new ApiError(400, 'No shop available. Please create a shop first.');
+      }
+      shopId = defaultShop.id;
+    }
+
     const order = await prisma.stockInOrder.create({
       data: {
-        shopId: req.user!.shopId || '',
+        shopId: shopId,
         supplierId,
         warehouseId,
-        operatorId: req.user!.id,
+        operatorId: req.user.id,
         notes,
         totalItems: items.length,
         items: {
@@ -189,7 +205,7 @@ export const createStockInOrder = async (req: AuthenticatedRequest, res: Respons
             oldStatus: 'pending',
             newStatus: 'pending',
             reason: 'Order created',
-            operatorId: req.user!.id
+            operatorId: req.user.id
           }
         }
       },

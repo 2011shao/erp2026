@@ -197,14 +197,14 @@ const StockInPage: React.FC = () => {
       const items = (values.products || []).map((product: any) => ({
         productId: product.productId || '',
         quantity: product.quantity,
-        price: product.price,
-        costPrice: product.costPrice,
+        price: Number(product.price),
         serialNumbers: product.serialNumbers
           ? product.serialNumbers
               .split(/[,;\s]+/)
               .filter((s: string) => s.trim() !== '')
           : [],
         generateSerialNumbers: false,
+        serialNumberType: 'manual',
       }));
 
       const response = await stockInApi.create({
@@ -450,8 +450,8 @@ const StockInPage: React.FC = () => {
                                           productName: selectedProduct.name,
                                           brandId: selectedProduct.brandId,
                                           categoryId: selectedProduct.categoryId,
-                                          price: selectedProduct.price,
-                                          costPrice: selectedProduct.costPrice || selectedProduct.price,
+                                          price: Number(selectedProduct.price),
+                                          costPrice: Number(selectedProduct.costPrice || selectedProduct.price),
                                         };
                                       }
                                       return f.value;
