@@ -72,10 +72,9 @@ export const getSupplierById = async (req: Request, res: Response, next: NextFun
 export const createSupplier = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { 
-      name, code, address, phone, email, 
+      name, code, address, contactPhone, contactEmail, 
       companyName, taxNumber, bankName, bankAccount,
-      contactName, contactPhone, contactEmail, contactPosition,
-      status, notes
+      contactName, status
     } = req.body;
 
     if (!name || !code) {
@@ -96,8 +95,8 @@ export const createSupplier = async (req: AuthenticatedRequest, res: Response, n
         name,
         code,
         address,
-        phone,
-        email,
+        phone: contactPhone,
+        email: contactEmail,
         companyName,
         taxNumber,
         bankName,
@@ -105,9 +104,7 @@ export const createSupplier = async (req: AuthenticatedRequest, res: Response, n
         contactName,
         contactPhone,
         contactEmail,
-        contactPosition,
         status: status || 'active',
-        notes,
         shopId: req.user!.shopId || ''
       }
     });
@@ -125,10 +122,9 @@ export const updateSupplier = async (req: Request, res: Response, next: NextFunc
   try {
     const { id } = req.params;
     const { 
-      name, code, address, phone, email, 
+      name, code, address, contactPhone, contactEmail, 
       companyName, taxNumber, bankName, bankAccount,
-      contactName, contactPhone, contactEmail, contactPosition,
-      status, notes
+      contactName, status
     } = req.body;
 
     const supplier = await prisma.supplier.findUnique({
@@ -156,8 +152,8 @@ export const updateSupplier = async (req: Request, res: Response, next: NextFunc
         name,
         code,
         address,
-        phone,
-        email,
+        phone: contactPhone,
+        email: contactEmail,
         companyName,
         taxNumber,
         bankName,
@@ -165,9 +161,7 @@ export const updateSupplier = async (req: Request, res: Response, next: NextFunc
         contactName,
         contactPhone,
         contactEmail,
-        contactPosition,
-        status,
-        notes
+        status
       }
     });
 
