@@ -450,6 +450,7 @@ const StockInPage: React.FC = () => {
                                           productName: selectedProduct.name,
                                           brandId: selectedProduct.brandId,
                                           categoryId: selectedProduct.categoryId,
+                                          model: selectedProduct.model,
                                           price: Number(selectedProduct.price),
                                           costPrice: Number(selectedProduct.costPrice || selectedProduct.price),
                                         };
