@@ -62,13 +62,14 @@ class ApiClient {
       (error) => {
         console.log('Error response:', error);
         const errorMessage = error.response?.data?.error || error.message || 'Request failed';
+        console.log('Error message:', errorMessage);
         
         // 检测token失效错误
         if (errorMessage.includes('invalid session token') || errorMessage.includes('Token expired') || errorMessage.includes('Unauthorized') || errorMessage.includes('Invalid or expired token')) {
+          console.log('Token expired, clearing token and triggering login');
           // 清除token
           this.clearToken();
           // 触发登录模态框显示
-          // 这里通过自定义事件来通知App组件显示登录模态框
           const event = new CustomEvent('tokenExpired');
           window.dispatchEvent(event);
         }

@@ -1,10 +1,10 @@
 import { Router, type Request, type Response } from 'express';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { authenticate } from '../middleware/auth';
 import { logSerialNumberStatusChange } from '../utils/serialNumberUtils';
+import prisma from '../lib/prisma';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // 应用认证中间件
 router.use(authenticate);
