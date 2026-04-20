@@ -197,7 +197,17 @@ export const createStockInOrder = async (req: AuthenticatedRequest, res: Respons
             productId: item.productId,
             quantity: item.quantity,
             price: item.price,
-            serialNumberType: item.serialNumberType
+            serialNumberType: item.serialNumberType,
+            ...(item.serialNumbers && item.serialNumbers.length > 0 && {
+              serialNumbers: {
+                create: item.serialNumbers.map((serialNumber: string) => ({
+                  serialNumber,
+                  productId: item.productId,
+                  shopId,
+                  status: 'in_stock'
+                }))
+              }
+            })
           }))
         },
         logs: {
@@ -224,7 +234,8 @@ export const createStockInOrder = async (req: AuthenticatedRequest, res: Respons
                   }
                 }
               }
-            }
+            },
+            serialNumbers: true
           }
         }
       }
