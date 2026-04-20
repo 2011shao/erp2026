@@ -90,6 +90,22 @@ export const createSupplier = async (req: AuthenticatedRequest, res: Response, n
       throw new ApiError(409, 'Supplier code already exists');
     }
 
+    // 确保用户已认证
+    if (!req.user) {
+      throw new ApiError(401, 'User not authenticated');
+    }
+
+    // 确保 shopId 存在且有效
+    let shopId = req.user.shopId;
+    if (!shopId) {
+      // 尝试获取第一个可用的店铺
+      const defaultShop = await prisma.shop.findFirst();
+      if (!defaultShop) {
+        throw new ApiError(400, 'No shop available. Please create a shop first.');
+      }
+      shopId = defaultShop.id;
+    }
+
     const supplier = await prisma.supplier.create({
       data: {
         name,
@@ -105,7 +121,7 @@ export const createSupplier = async (req: AuthenticatedRequest, res: Response, n
         contactPhone,
         contactEmail,
         status: status || 'active',
-        shopId: req.user!.shopId || ''
+        shopId: shopId
       }
     });
 
