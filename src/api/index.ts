@@ -926,8 +926,8 @@ export const stockInApi = {
     status?: 'pending' | 'completed' | 'cancelled';
   }) => api.put<StockInOrder>(`/stock-in/${id}`, data),
   delete: (id: string) => api.delete(`/stock-in/${id}`),
-  complete: (id: string) => api.post(`/stock-in/${id}/complete`),
-  cancel: (id: string) => api.post(`/stock-in/${id}/cancel`),
+  complete: (id: string) => api.put(`/stock-in/${id}/confirm`),
+  cancel: (id: string, data: { reason: string }) => api.put(`/stock-in/${id}/cancel`, data),
   getSerialNumberLogs: (serialNumber: string) => api.get<any[]>(`/stock-in/serial-number/${serialNumber}/logs`),
 };
 

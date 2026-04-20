@@ -162,7 +162,7 @@ const StockInPage: React.FC = () => {
 
   const handleCancel = async (id: string) => {
     try {
-      const response = await stockInApi.cancel(id);
+      const response = await stockInApi.cancel(id, { reason: '用户取消' });
       if (response.success) {
         message.success('取消成功');
         fetchOrders();
